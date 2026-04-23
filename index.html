@@ -12,11 +12,7 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            light: '#F3E8FF', 
-                            DEFAULT: '#b593c4', 
-                            dark: '#9a7aa8',
-                        }
+                        brand: { light: '#F3E8FF', DEFAULT: '#b593c4', dark: '#9a7aa8' }
                     }
                 }
             }
@@ -32,12 +28,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #ffffff; scroll-behavior: smooth; }
         .word-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .word-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.08); }
-        /* Закругленные кнопки-пилюли */
         .filter-btn { border-radius: 9999px; transition: all 0.2s ease; white-space: nowrap; }
         .filter-btn.active { background-color: #b593c4; color: white; border-color: #b593c4; box-shadow: 0 4px 12px rgba(181, 147, 196, 0.3); }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Скрытие скроллбара для фильтров */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -46,12 +40,8 @@
 
     <nav class="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="font-black text-2xl text-gray-800 tracking-tighter cursor-pointer" onclick="location.reload()">TOEFL.ai</div>
-        
         <div class="flex items-center space-x-4">
-            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-dark transition shadow-lg shadow-brand/20">
-                Teacher Cabinet
-            </button>
-            
+            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-dark transition shadow-lg shadow-brand/20">Teacher Cabinet</button>
             <div id="authSection">
                 <button onclick="showAuthModal()" class="text-gray-400 hover:text-brand font-bold text-sm transition">Log In</button>
             </div>
@@ -59,7 +49,6 @@
     </nav>
 
     <main class="max-w-6xl mx-auto px-6 py-12">
-        
         <div id="listView">
             <header class="mb-12">
                 <h1 class="text-5xl font-black text-gray-900 mb-3 tracking-tighter">Vocabulary Hub</h1>
@@ -67,16 +56,15 @@
             </header>
 
             <div class="flex flex-wrap gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
-                <button onclick="filterWords('All', this)" class="filter-btn active border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">All</button>
-                <button onclick="filterWords('Advanced', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">Advanced</button>
-                <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">Upper-Intermediate</button>
-                <button onclick="filterWords('Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">Intermediate</button>
-                <button onclick="filterWords('Pre-Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">Pre-Intermediate</button>
-                <button onclick="filterWords('Elementary', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-50">Elementary</button>
+                <button onclick="filterWords('All', this)" class="filter-btn active border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">All</button>
+                <button onclick="filterWords('Advanced', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Advanced</button>
+                <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Upper-Intermediate</button>
+                <button onclick="filterWords('Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Intermediate</button>
+                <button onclick="filterWords('Pre-Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Pre-Intermediate</button>
+                <button onclick="filterWords('Elementary', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Elementary</button>
             </div>
 
-            <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                </div>
+            <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </div>
 
         <div id="detailView" class="hidden max-w-3xl mx-auto animate-fade-in">
@@ -88,47 +76,17 @@
 
         <section id="adminPanel" class="hidden mt-20 pt-16 border-t border-gray-100">
             <div class="bg-gray-50 p-10 rounded-[40px] border-2 border-dashed border-brand/20 shadow-inner">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-2xl font-black text-gray-800 flex items-center">
-                        <i class="fa-solid fa-pen-nib mr-3 text-brand"></i> Add New Word Card
-                    </h2>
-                    <button onclick="toggleAdminPanel()" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
-                </div>
-                
+                <h2 class="text-2xl font-black text-gray-800 mb-8"><i class="fa-solid fa-pen-nib mr-3 text-brand"></i> Add New Word Card</h2>
                 <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Word</label>
-                        <input type="text" id="f-word" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="e.g. Eloquent" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Level</label>
-                        <select id="f-level" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm">
-                            <option>Advanced</option>
-                            <option>Upper-Intermediate</option>
-                            <option>Intermediate</option>
-                            <option>Pre-Intermediate</option>
-                            <option>Elementary</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Part of Speech</label>
-                        <input type="text" id="f-pos" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="adj, verb, noun...">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Synonyms</label>
-                        <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Synonyms...">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Definition</label>
-                        <textarea id="f-def" rows="2" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Explain the meaning..."></textarea>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Context Sentence</label>
-                        <textarea id="f-ex" rows="2" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Full sentence context..."></textarea>
-                    </div>
-                    <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition transform active:scale-[0.98] mt-2 uppercase tracking-widest text-xs">
-                        Add to Cloud Database
-                    </button>
+                    <input type="text" id="f-word" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Word" required>
+                    <select id="f-level" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm">
+                        <option>Advanced</option><option>Upper-Intermediate</option><option>Intermediate</option><option>Pre-Intermediate</option><option>Elementary</option>
+                    </select>
+                    <input type="text" id="f-pos" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Part of Speech">
+                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Synonyms">
+                    <textarea id="f-def" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Definition"></textarea>
+                    <textarea id="f-ex" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Context Sentence"></textarea>
+                    <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Cloud</button>
                 </form>
             </div>
         </section>
@@ -137,14 +95,12 @@
     <div id="authModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl relative animate-fade-in">
             <button onclick="closeAuthModal()" class="absolute top-8 right-8 text-gray-300 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-4xl font-black mb-2 tracking-tighter">TOEFL Prep</h3>
-            <p class="text-gray-400 text-sm mb-8">Personal Cabinet Access</p>
-            
+            <h3 class="text-4xl font-black mb-8 tracking-tighter">TOEFL Prep</h3>
             <div class="space-y-4">
-                <input type="email" id="authEmail" placeholder="Email Address" class="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand border-none">
-                <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand border-none">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition transform active:scale-95">Sign In</button>
-                <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-brand transition mt-4">Create New Student Account</button>
+                <input type="email" id="authEmail" placeholder="Email" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
+                <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
+                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition">Sign In</button>
+                <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-brand transition mt-4">Create Account</button>
             </div>
         </div>
     </div>
@@ -159,86 +115,47 @@
         let userSession = null;
         let userRole = 'student';
 
-        // --- AUTH & ROLES ---
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
             if (session) {
                 userSession = session.user;
-                // Запрос роли из таблицы profiles
-                const { data: profile, error } = await _client
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', userSession.id)
-                    .single();
-
-                if (error) console.error("Profile Error:", error.message);
+                const { data: profile } = await _client.from('profiles').select('role').eq('id', userSession.id).single();
                 userRole = profile?.role || 'student';
-                
-                console.log("Logged in as:", userSession.email, "| Role:", userRole);
                 updateUI(true);
-            } else {
-                updateUI(false);
-            }
+            } else { updateUI(false); }
             loadWords();
-        }
-
-        async function handleAuth(type) {
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPass').value;
-            
-            const { data, error } = (type === 'login') 
-                ? await _client.auth.signInWithPassword({ email, password })
-                : await _client.auth.signUp({ email, password });
-
-            if (error) alert(error.message);
-            else {
-                if (type === 'signup') alert("Welcome! Check your email to verify account.");
-                location.reload();
-            }
         }
 
         function updateUI(loggedIn) {
             const authSection = document.getElementById('authSection');
             const adminBtn = document.getElementById('adminBtn');
-            
             if (loggedIn) {
-                authSection.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest hidden md:block">${userSession.email}</span>
-                        <button onclick="_client.auth.signOut().then(() => location.reload())" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>
-                    </div>
-                `;
-                // Кнопка появляется ТОЛЬКО если в базе стоит role = 'admin'
+                authSection.innerHTML = `<button onclick="_client.auth.signOut().then(() => location.reload())" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>`;
                 if (userRole === 'admin') adminBtn.classList.remove('hidden');
             }
         }
 
-        // --- VOCABULARY ENGINE ---
+        async function handleAuth(type) {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPass').value;
+            const { error } = (type === 'login') ? await _client.auth.signInWithPassword({ email, password }) : await _client.auth.signUp({ email, password });
+            if (error) alert(error.message); else location.reload();
+        }
+
         async function loadWords() {
             const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
-            if (data) {
-                wordsData = data;
-                renderWords(data);
-            }
+            if (data) { wordsData = data; renderWords(data); }
         }
 
         function renderWords(list) {
             const grid = document.getElementById('wordsGrid');
             const filtered = currentFilter === 'All' ? list : list.filter(w => w.level === currentFilter);
-            
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="col-span-full py-20 text-center text-gray-300 italic font-medium">No words found for this level.</div>';
-                return;
-            }
-
             grid.innerHTML = filtered.map(w => `
                 <div class="word-card bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[280px] cursor-pointer group" onclick="showDetail('${w.id}')">
                     <div>
                         <div class="flex justify-between items-start mb-2">
                             <h3 class="text-3xl font-black text-gray-800 tracking-tighter group-hover:text-brand transition">${w.word}</h3>
-                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-200 hover:text-brand transition">
-                                <i class="fa-solid fa-volume-high text-xl"></i>
-                            </button>
+                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high text-xl"></i></button>
                         </div>
                         <p class="text-gray-400 italic text-[10px] mb-6 font-black uppercase tracking-[0.2em]">${w.pos || 'vocabulary'}</p>
                         <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 font-medium">${w.definition || ''}</p>
@@ -251,44 +168,23 @@
             `).join('');
         }
 
-        function filterWords(level, btn) {
-            currentFilter = level;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderWords(wordsData);
-        }
-
         function showDetail(id) {
             const w = wordsData.find(item => item.id === id);
             const content = document.getElementById('detailContent');
-            
             content.innerHTML = `
-                <div class="bg-white p-12 rounded-[50px] border border-gray-100 shadow-2xl relative overflow-hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-7xl font-black text-brand tracking-tighter">${w.word}</h2>
+                <div id="detailCard" class="bg-white p-12 rounded-[50px] border border-gray-100 shadow-2xl relative">
+                    ${userRole === 'admin' ? `<button onclick="editWord('${w.id}')" class="absolute top-8 right-12 bg-brand-light text-brand font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-full hover:bg-brand hover:text-white transition shadow-sm">Edit Card</button>` : ''}
+                    <div class="flex items-center mb-4">
+                        <h2 class="text-7xl font-black text-brand tracking-tighter mr-6">${w.word}</h2>
                         <button onclick="speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
                     </div>
-                    <p class="text-gray-400 italic text-sm mb-10 font-black uppercase tracking-[0.3em]">${w.pos || ''} • ${w.level}</p>
-                    
+                    <p class="text-gray-400 italic text-sm mb-10 font-black uppercase tracking-[0.3em]">${w.pos} • ${w.level}</p>
                     <div class="space-y-12">
-                        <section>
-                            <h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Definition</h4>
-                            <p class="text-gray-700 text-2xl leading-tight font-semibold">${w.definition || '-'}</p>
-                        </section>
-                        <section class="bg-gray-50 p-10 rounded-[40px] border-l-[12px] border-brand">
-                            <h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Context Example</h4>
-                            <p class="text-gray-500 italic text-xl leading-relaxed">"${w.example || '-'}"</p>
-                        </section>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 pt-10 border-t border-gray-50">
-                            <div>
-                                <h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Synonyms</h4>
-                                <p class="text-brand font-black text-xl tracking-tight">${w.synonyms || '-'}</p>
-                            </div>
-                            <div>
-                                <h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Antonyms</h4>
-                                <p class="text-gray-400 font-black text-xl tracking-tight">${w.antonyms || '-'}</p>
-                            </div>
+                        <section><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Definition</h4><p class="text-gray-700 text-2xl leading-tight font-semibold">${w.definition || '-'}</p></section>
+                        <section class="bg-gray-50 p-10 rounded-[40px] border-l-[12px] border-brand"><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Context Example</h4><p class="text-gray-500 italic text-xl leading-relaxed">"${w.example || '-'}"</p></section>
+                        <div class="grid grid-cols-2 gap-10 pt-10 border-t border-gray-50">
+                            <div><h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Synonyms</h4><p class="text-brand font-black text-xl tracking-tight">${w.synonyms || '-'}</p></div>
+                            <div><h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Antonyms</h4><p class="text-gray-400 font-black text-xl tracking-tight">${w.antonyms || '-'}</p></div>
                         </div>
                     </div>
                 </div>
@@ -298,33 +194,67 @@
             window.scrollTo(0, 0);
         }
 
-        // --- UI HELPERS ---
-        function hideDetail() {
-            document.getElementById('detailView').classList.add('hidden');
-            document.getElementById('listView').classList.remove('hidden');
+        function editWord(id) {
+            const w = wordsData.find(item => item.id === id);
+            document.getElementById('detailCard').innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-black uppercase tracking-widest text-brand">Edit Mode</h2>
+                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none pb-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="e-level" class="p-4 bg-gray-50 rounded-2xl outline-none">
+                            <option ${w.level === 'Advanced' ? 'selected' : ''}>Advanced</option>
+                            <option ${w.level === 'Upper-Intermediate' ? 'selected' : ''}>Upper-Intermediate</option>
+                            <option ${w.level === 'Intermediate' ? 'selected' : ''}>Intermediate</option>
+                            <option ${w.level === 'Pre-Intermediate' ? 'selected' : ''}>Pre-Intermediate</option>
+                            <option ${w.level === 'Elementary' ? 'selected' : ''}>Elementary</option>
+                        </select>
+                        <input type="text" id="e-pos" value="${w.pos || ''}" class="p-4 bg-gray-50 rounded-2xl outline-none" placeholder="POS">
+                    </div>
+                    <textarea id="e-def" rows="3" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.definition || ''}</textarea>
+                    <textarea id="e-ex" rows="2" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.example || ''}</textarea>
+                    <input type="text" id="e-syn" value="${w.synonyms || ''}" class="w-full p-4 bg-gray-50 rounded-2xl outline-none" placeholder="Synonyms">
+                    <div class="flex gap-4">
+                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl shadow-lg">Save Changes</button>
+                        <button onclick="showDetail('${id}')" class="px-8 bg-gray-100 text-gray-400 font-black py-4 rounded-2xl">Cancel</button>
+                    </div>
+                </div>
+            `;
         }
+
+        async function saveEdit(id) {
+            const updated = {
+                word: document.getElementById('e-word').value,
+                level: document.getElementById('e-level').value,
+                pos: document.getElementById('e-pos').value,
+                definition: document.getElementById('e-def').value,
+                example: document.getElementById('e-ex').value,
+                synonyms: document.getElementById('e-syn').value
+            };
+            const { error } = await _client.from('vocabulary').update(updated).eq('id', id);
+            if (error) alert(error.message); else { await loadWords(); showDetail(id); }
+        }
+
+        function filterWords(level, btn) {
+            currentFilter = level;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderWords(wordsData);
+        }
+
+        function hideDetail() { document.getElementById('detailView').classList.add('hidden'); document.getElementById('listView').classList.remove('hidden'); }
         function toggleAdminPanel() { document.getElementById('adminPanel').classList.toggle('hidden'); }
         function showAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
 
-        // --- FORM SUBMIT ---
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
-                word: document.getElementById('f-word').value,
-                level: document.getElementById('f-level').value,
-                pos: document.getElementById('f-pos').value,
-                definition: document.getElementById('f-def').value,
-                example: document.getElementById('f-ex').value,
-                synonyms: document.getElementById('f-syn').value
+                word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
+                pos: document.getElementById('f-pos').value, definition: document.getElementById('f-def').value,
+                example: document.getElementById('f-ex').value, synonyms: document.getElementById('f-syn').value
             };
             const { error } = await _client.from('vocabulary').insert([payload]);
-            if (error) alert(error.message);
-            else {
-                alert('Success! Word added.');
-                document.getElementById('addWordForm').reset();
-                loadWords();
-            }
+            if (error) alert(error.message); else { document.getElementById('addWordForm').reset(); loadWords(); }
         });
 
         checkSession();
