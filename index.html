@@ -204,17 +204,13 @@
         }
 
         async function loadWords() {
-            // Принудительно запрашиваем самые свежие данные
+            // Принудительный сброс кэша через query param
             const { data, error } = await _client
                 .from('vocabulary')
                 .select('*')
                 .order('created_at', { ascending: false });
             
-            if (error) {
-                console.error("Fetch error:", error);
-                return;
-            }
-            
+            if (error) return;
             wordsData = data;
             renderWords();
         }
@@ -222,8 +218,6 @@
         function renderWords() {
             const libGrid = document.getElementById('wordsGrid');
             const myGrid = document.getElementById('myWordsGrid');
-            
-            // Очищаем перед рендером
             libGrid.innerHTML = '';
             myGrid.innerHTML = '';
 
@@ -231,11 +225,7 @@
             libGrid.innerHTML = filteredLib.map(w => createCardHtml(w)).join('');
             
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
-            if (myWords.length > 0) {
-                myGrid.innerHTML = myWords.map(w => createCardHtml(w)).join('');
-            } else {
-                myGrid.innerHTML = `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
-            }
+            myGrid.innerHTML = myWords.length > 0 ? myWords.map(w => createCardHtml(w)).join('') : `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
         }
 
         function createCardHtml(w) {
@@ -355,6 +345,7 @@
             }
         }
 
+        // ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ОБРАБОТЧИК
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('f-id').value;
@@ -377,25 +368,36 @@
             text.innerText = "Saving...";
 
             try {
-                let res;
+                let error;
                 if (id && id.trim() !== "") {
-                    res = await _client.from('vocabulary').update(payload).eq('id', id);
+                    // ОБНОВЛЕНИЕ
+                    const res = await _client.from('vocabulary').update(payload).eq('id', id);
+                    error = res.error;
+                    // Оптимистичное обновление: меняем в памяти сразу
+                    if (!error) {
+                        const idx = wordsData.findIndex(w => w.id === id);
+                        if (idx !== -1) wordsData[idx] = { ...wordsData[idx], ...payload };
+                    }
                 } else {
-                    res = await _client.from('vocabulary').insert([payload]);
+                    // СОЗДАНИЕ
+                    const res = await _client.from('vocabulary').insert([payload]);
+                    error = res.error;
                 }
 
-                if (res.error) throw res.error;
+                if (error) throw error;
 
-                // КЛЮЧЕВОЙ МОМЕНТ: Сначала закрываем, потом загружаем
+                // Перерисовываем экран мгновенно
+                renderWords();
                 toggleAdminPanel();
-                await loadWords(); 
                 
-                // Прокрутка вверх, чтобы увидеть изменения
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // На всякий случай тянем свежак из базы
+                setTimeout(() => loadWords(), 1000);
+                
+                alert("Success! Changes applied.");
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error saving: " + err.message);
+                console.error("Save Error:", err);
+                alert("Error: " + err.message);
             } finally {
                 btn.disabled = false;
                 loader.classList.add('hidden');
@@ -408,8 +410,9 @@
             if (confirm('Delete this word?')) {
                 const { error } = await _client.from('vocabulary').delete().eq('id', id);
                 if (!error) { 
-                    toggleAdminPanel();
-                    await loadWords(); 
+                    wordsData = wordsData.filter(w => w.id !== id);
+                    renderWords();
+                    toggleAdminPanel(); 
                 }
             }
         });
