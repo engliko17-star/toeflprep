@@ -84,7 +84,9 @@
                         <option>Advanced</option><option>Upper-Intermediate</option><option>Intermediate</option><option>Pre-Intermediate</option><option>Elementary</option>
                     </select>
                     <input type="text" id="f-pos" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Part of Speech">
-                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Synonyms / Antonyms">
+                    <div></div>
+                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-400 shadow-sm" placeholder="Synonyms (comma separated)">
+                    <input type="text" id="f-ant" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-400 shadow-sm" placeholder="Antonyms (comma separated)">
                     <textarea id="f-def" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Definition"></textarea>
                     <textarea id="f-ex" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Context Sentence"></textarea>
                     <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Database</button>
@@ -248,9 +250,21 @@
                         <button onclick="speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
                     </div>
                     <p class="text-gray-400 italic text-sm mb-10 font-black uppercase tracking-[0.3em]">${w.pos} • ${w.level}</p>
-                    <div class="space-y-12">
+                    
+                    <div class="space-y-10">
                         <section><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Definition</h4><p class="text-gray-700 text-2xl leading-tight font-semibold">${w.definition || '-'}</p></section>
-                        <section><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Synonyms & Antonyms</h4><p class="text-gray-600 text-xl font-medium">${w.synonyms || '-'}</p></section>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <section class="bg-green-50 p-8 rounded-[30px] border-l-8 border-green-200">
+                                <h4 class="font-black text-green-700/40 mb-3 text-[10px] uppercase tracking-[0.2em]">Synonyms</h4>
+                                <p class="text-green-800 text-lg font-bold italic">${w.synonyms || '-'}</p>
+                            </section>
+                            <section class="bg-red-50 p-8 rounded-[30px] border-l-8 border-red-100">
+                                <h4 class="font-black text-red-700/30 mb-3 text-[10px] uppercase tracking-[0.2em]">Antonyms</h4>
+                                <p class="text-red-800 text-lg font-bold italic">${w.antonyms || '-'}</p>
+                            </section>
+                        </div>
+
                         <section class="bg-gray-50 p-10 rounded-[40px] border-l-[12px] border-brand"><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Context Example</h4><p class="text-gray-500 italic text-xl leading-relaxed">"${w.example || '-'}"</p></section>
                     </div>
                 </div>`;
@@ -275,7 +289,10 @@
                         </select>
                         <input type="text" id="e-pos" value="${w.pos || ''}" class="p-4 bg-gray-50 rounded-2xl outline-none">
                     </div>
-                    <textarea id="e-syn" placeholder="Synonyms & Antonyms" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.synonyms || ''}</textarea>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="e-syn" placeholder="Synonyms" value="${w.synonyms || ''}" class="p-4 bg-green-50 rounded-2xl outline-none border border-green-100">
+                        <input type="text" id="e-ant" placeholder="Antonyms" value="${w.antonyms || ''}" class="p-4 bg-red-50 rounded-2xl outline-none border border-red-50">
+                    </div>
                     <textarea id="e-def" rows="3" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.definition || ''}</textarea>
                     <textarea id="e-ex" rows="2" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.example || ''}</textarea>
                     <div class="flex gap-4">
@@ -291,6 +308,7 @@
                 level: document.getElementById('e-level').value,
                 pos: document.getElementById('e-pos').value,
                 synonyms: document.getElementById('e-syn').value,
+                antonyms: document.getElementById('e-ant').value,
                 definition: document.getElementById('e-def').value,
                 example: document.getElementById('e-ex').value
             };
@@ -314,10 +332,12 @@
             const payload = {
                 word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
                 pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value,
+                antonyms: document.getElementById('f-ant').value,
                 definition: document.getElementById('f-def').value, example: document.getElementById('f-ex').value
             };
             const { error } = await _client.from('vocabulary').insert([payload]);
             if (!error) { document.getElementById('addWordForm').reset(); loadWords(); }
+            else { console.error(error); alert("Error adding word. Check if you ran the SQL command."); }
         });
 
         checkSession();
