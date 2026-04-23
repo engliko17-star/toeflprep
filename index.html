@@ -85,8 +85,8 @@
                     </select>
                     <input type="text" id="f-pos" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Part of Speech">
                     <div></div>
-                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-400 shadow-sm" placeholder="Synonyms (comma separated)">
-                    <input type="text" id="f-ant" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-400 shadow-sm" placeholder="Antonyms (comma separated)">
+                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-400 shadow-sm" placeholder="Synonyms">
+                    <input type="text" id="f-ant" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-400 shadow-sm" placeholder="Antonyms">
                     <textarea id="f-def" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Definition"></textarea>
                     <textarea id="f-ex" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Context Sentence"></textarea>
                     <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Database</button>
@@ -223,7 +223,7 @@
                     <div class="mt-8 flex justify-between items-center">
                         <span class="inline-block bg-brand-light text-brand-dark text-[9px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest">${w.level}</span>
                         <div class="flex gap-2 items-center">
-                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high"></i></button>
+                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-500 hover:text-gray-800 transition"><i class="fa-solid fa-volume-high"></i></button>
                             ${userRole === 'admin' ? `<i class="fa-solid fa-pen-to-square text-brand/30 hover:text-brand transition" onclick="event.stopPropagation(); editFromGrid('${w.id}')"></i>` : ''}
                         </div>
                     </div>
@@ -247,7 +247,7 @@
                     </div>
                     <div class="flex items-center mb-4">
                         <h2 class="text-7xl font-black text-brand tracking-tighter mr-6">${w.word}</h2>
-                        <button onclick="speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
+                        <button onclick="speak('${w.word}')" class="text-gray-500 hover:text-gray-800 transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
                     </div>
                     <p class="text-gray-400 italic text-sm mb-10 font-black uppercase tracking-[0.3em]">${w.pos} • ${w.level}</p>
                     
@@ -337,7 +337,6 @@
             };
             const { error } = await _client.from('vocabulary').insert([payload]);
             if (!error) { document.getElementById('addWordForm').reset(); loadWords(); }
-            else { console.error(error); alert("Error adding word. Check if you ran the SQL command."); }
         });
 
         checkSession();
