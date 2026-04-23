@@ -412,38 +412,15 @@
 
         function renderWords() {
             const libSec = document.getElementById('librarySection'), mySec = document.getElementById('myProgressSection');
+            if (activeView === 'home') { libSec.classList.remove('hidden'); mySec.classList.remove('hidden'); document.getElementById('myWordsBack').classList.add('hidden'); document.getElementById('libBack').classList.add('hidden'); }
+            else if (activeView === 'my-all') { libSec.classList.add('hidden'); mySec.classList.remove('hidden'); document.getElementById('myWordsBack').classList.remove('hidden'); }
+            else { mySec.classList.add('hidden'); libSec.classList.remove('hidden'); document.getElementById('libBack').classList.remove('hidden'); }
             
-            // Фильтруем слова пользователя
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
+            document.getElementById('myWordsGrid').innerHTML = myWords.slice(0, 20).map(w => createCardHtml(w)).join('') || `<div class="col-span-full text-center text-gray-300 py-10 uppercase text-[10px] font-black">No words here yet</div>`;
             
-            // Если мы на главной (home), показываем оба блока, если в разделе My Words нет слов — скрываем его
-            if (activeView === 'home') { 
-                libSec.classList.remove('hidden'); 
-                if (myWords.length > 0) {
-                    mySec.classList.remove('hidden'); 
-                } else {
-                    mySec.classList.add('hidden');
-                }
-                document.getElementById('myWordsBack').classList.add('hidden'); 
-                document.getElementById('libBack').classList.add('hidden'); 
-            }
-            else if (activeView === 'my-all') { 
-                libSec.classList.add('hidden'); 
-                mySec.classList.remove('hidden'); 
-                document.getElementById('myWordsBack').classList.remove('hidden'); 
-            }
-            else { 
-                mySec.classList.add('hidden'); 
-                libSec.classList.remove('hidden'); 
-                document.getElementById('libBack').classList.remove('hidden'); 
-            }
-            
-            // Отрисовка My Words (без лимита в 20)
-            document.getElementById('myWordsGrid').innerHTML = myWords.map(w => createCardHtml(w)).join('') || `<div class="col-span-full text-center text-gray-300 py-10 uppercase text-[10px] font-black">No words here yet</div>`;
-            
-            // Отрисовка Library (без лимита в 20)
             let fl = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
-            document.getElementById('wordsGrid').innerHTML = fl.map(w => createCardHtml(w)).join('');
+            document.getElementById('wordsGrid').innerHTML = fl.slice(0, 20).map(w => createCardHtml(w)).join('');
         }
 
         function createCardHtml(w) {
