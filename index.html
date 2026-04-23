@@ -179,7 +179,7 @@
                 document.getElementById('authModal').classList.add('hidden');
                 updateUI(true, currentUser.email);
                 await loadUserProgress();
-                loadWords();
+                await loadWords();
             }
         }
 
@@ -189,27 +189,8 @@
             data?.forEach(item => userProgressMap[item.word_id] = item.status);
         }
 
-        async function updateWordStatus(wordId, newStatus, event) {
-            if (event) event.stopPropagation();
-            if (newStatus === userProgressMap[wordId]) newStatus = 'none';
-            if (newStatus === 'none') {
-                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
-                delete userProgressMap[wordId];
-            } else {
-                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' });
-                userProgressMap[wordId] = newStatus;
-            }
-            renderWords();
-            if (!document.getElementById('detailView').classList.contains('hidden')) { showDetail(wordId); }
-        }
-
         async function loadWords() {
-            // Принудительный сброс кэша через query param
-            const { data, error } = await _client
-                .from('vocabulary')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
+            const { data, error } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
             if (error) return;
             wordsData = data;
             renderWords();
@@ -247,6 +228,20 @@
                     <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-400 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high"></i></button>
                 </div>
             </div>`;
+        }
+
+        async function updateWordStatus(wordId, newStatus, event) {
+            if (event) event.stopPropagation();
+            if (newStatus === userProgressMap[wordId]) newStatus = 'none';
+            if (newStatus === 'none') {
+                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
+                delete userProgressMap[wordId];
+            } else {
+                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' });
+                userProgressMap[wordId] = newStatus;
+            }
+            renderWords();
+            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
         }
 
         function showDetail(id) {
@@ -309,48 +304,10 @@
             window.scrollTo(0, document.body.scrollHeight);
         }
 
-        function filterWords(level, btn) {
-            libFilter = level;
-            document.querySelectorAll('#librarySection .filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderWords();
-        }
-
-        function filterMyWords(status, btn) {
-            myFilter = status;
-            document.querySelectorAll('.my-filter-btn').forEach(b => { b.classList.remove('text-brand', 'font-black'); b.classList.add('text-gray-400'); });
-            btn.classList.add('text-brand', 'font-black');
-            renderWords();
-        }
-
-        function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
-        
-        function toggleAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            if (panel.classList.contains('hidden')) {
-                document.getElementById('addWordForm').reset();
-                document.getElementById('f-id').value = "";
-                document.getElementById('adminTitle').innerText = "Add New Content";
-                document.getElementById('btnText').innerText = "Publish";
-                document.getElementById('deleteBtn').classList.add('hidden');
-            }
-            panel.classList.toggle('hidden');
-        }
-
-        function updateUI(loggedIn, email = '') {
-            const authSection = document.getElementById('authSection');
-            if (loggedIn) {
-                authSection.innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${email}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase">Exit</button>`;
-                if (userRole === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
-            }
-        }
-
-        // ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ОБРАБОТЧИК
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('f-id').value;
             const btn = document.getElementById('submitBtn');
-            const loader = document.getElementById('btnLoader');
             const text = document.getElementById('btnText');
 
             const payload = {
@@ -364,43 +321,26 @@
             };
 
             btn.disabled = true;
-            loader.classList.remove('hidden');
-            text.innerText = "Saving...";
+            text.innerText = "Syncing...";
 
             try {
-                let error;
                 if (id && id.trim() !== "") {
-                    // ОБНОВЛЕНИЕ
-                    const res = await _client.from('vocabulary').update(payload).eq('id', id);
-                    error = res.error;
-                    // Оптимистичное обновление: меняем в памяти сразу
-                    if (!error) {
-                        const idx = wordsData.findIndex(w => w.id === id);
-                        if (idx !== -1) wordsData[idx] = { ...wordsData[idx], ...payload };
-                    }
+                    const { error } = await _client.from('vocabulary').update(payload).eq('id', id);
+                    if (error) throw error;
+                    const idx = wordsData.findIndex(w => w.id === id);
+                    if (idx !== -1) wordsData[idx] = { ...wordsData[idx], ...payload };
                 } else {
-                    // СОЗДАНИЕ
-                    const res = await _client.from('vocabulary').insert([payload]);
-                    error = res.error;
+                    const { data, error } = await _client.from('vocabulary').insert([payload]).select();
+                    if (error) throw error;
+                    if (data) wordsData.unshift(data[0]);
                 }
-
-                if (error) throw error;
-
-                // Перерисовываем экран мгновенно
                 renderWords();
                 toggleAdminPanel();
-                
-                // На всякий случай тянем свежак из базы
-                setTimeout(() => loadWords(), 1000);
-                
                 alert("Success! Changes applied.");
-
             } catch (err) {
-                console.error("Save Error:", err);
                 alert("Error: " + err.message);
             } finally {
                 btn.disabled = false;
-                loader.classList.add('hidden');
                 text.innerText = id ? "Save Changes" : "Publish";
             }
         });
@@ -417,6 +357,22 @@
             }
         });
 
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            if (panel.classList.contains('hidden')) {
+                document.getElementById('addWordForm').reset();
+                document.getElementById('f-id').value = "";
+                document.getElementById('adminTitle').innerText = "Add New Content";
+                document.getElementById('btnText').innerText = "Publish";
+                document.getElementById('deleteBtn').classList.add('hidden');
+            }
+            panel.classList.toggle('hidden');
+        }
+
+        function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
+        function filterWords(l, b) { libFilter = l; document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderWords(); }
+        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => { btn.classList.remove('text-brand', 'font-black'); btn.classList.add('text-gray-400'); }); b.classList.add('text-brand', 'font-black'); renderWords(); }
+        function updateUI(l, e) { if(l) { document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); } }
         async function handleAuth(type) {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
