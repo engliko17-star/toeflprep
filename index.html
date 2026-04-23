@@ -37,21 +37,20 @@
 </head>
 <body class="min-h-screen bg-white text-gray-900">
 
-    <nav class="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <nav id="navBar" class="hidden bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="font-black text-2xl text-gray-800 tracking-tighter cursor-pointer" onclick="location.reload()">TOEFL.ai</div>
         <div class="flex items-center space-x-4">
             <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-dark transition shadow-lg shadow-brand/20">Teacher Cabinet</button>
             <div id="authSection">
-                <button onclick="showAuthModal()" class="text-gray-400 hover:text-brand font-bold text-sm transition">Log In</button>
-            </div>
+                </div>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-6 py-12">
+    <main id="mainContent" class="hidden max-w-6xl mx-auto px-6 py-12">
         <div id="listView">
             <header class="mb-12">
                 <h1 class="text-5xl font-black text-gray-900 mb-3 tracking-tighter">Vocabulary Hub</h1>
-                <p class="text-gray-400 font-medium">Personalized path for TOEFL 2026 Preparation.</p>
+                <p class="text-gray-400 font-medium">Exclusive TOEFL 2026 Preparation Materials.</p>
             </header>
 
             <div class="flex flex-wrap gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
@@ -91,14 +90,14 @@
         </section>
     </main>
 
-    <div id="authModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl relative animate-fade-in">
-            <button onclick="closeAuthModal()" class="absolute top-8 right-8 text-gray-300 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-4xl font-black mb-8 tracking-tighter text-gray-800">Sign In</h3>
-            <div class="space-y-4">
+    <div id="authModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl relative animate-fade-in text-center">
+            <h3 class="text-4xl font-black mb-2 tracking-tighter text-gray-800">TOEFL Prep</h3>
+            <p class="text-gray-400 text-sm mb-8 font-medium">Please sign in to access materials</p>
+            <div class="space-y-4 text-left">
                 <input type="email" id="authEmail" placeholder="Email" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
                 <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition">Enter</button>
+                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition transform active:scale-95">Sign In</button>
                 <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-brand transition mt-4">Create Account</button>
             </div>
         </div>
@@ -113,43 +112,35 @@
         let currentFilter = 'All';
         let userRole = 'student';
 
-        // --- ГЛАВНАЯ ПРОВЕРКА ---
         async function checkSession() {
-            const { data: { session }, error: sessionError } = await _client.auth.getSession();
+            const { data: { session } } = await _client.auth.getSession();
             
-            if (sessionError) {
-                console.error("Session Error:", sessionError.message);
-                return;
-            }
+            const mainContent = document.getElementById('mainContent');
+            const navBar = document.getElementById('navBar');
+            const authModal = document.getElementById('authModal');
 
             if (session) {
                 const user = session.user;
-                console.log("Юзер найден:", user.email);
+                // Форсированная проверка роли
+                const { data: profiles } = await _client.from('profiles').select('role').eq('id', user.id);
+                userRole = (profiles && profiles.length > 0) ? profiles[0].role : 'student';
 
-                // Форсированная проверка роли (ищем массив, а не одиночную запись)
-                const { data: profiles, error: profileError } = await _client
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id);
+                console.log("Вход подтвержден:", user.email, "| Роль:", userRole);
 
-                if (profileError) {
-                    console.error("Ошибка запроса профиля:", profileError.message);
-                }
-
-                if (profiles && profiles.length > 0) {
-                    userRole = profiles[0].role;
-                    console.log("ВАША РОЛЬ В БАЗЕ:", userRole);
-                } else {
-                    console.warn("Профиль не найден в таблице profiles. По умолчанию: student");
-                    userRole = 'student';
-                }
-
+                // Показываем контент
+                mainContent.classList.remove('hidden');
+                navBar.classList.remove('hidden');
+                authModal.classList.add('hidden');
+                
                 updateUI(true, user.email);
+                loadWords();
             } else {
-                console.log("Пользователь не залогинен");
+                console.log("Доступ ограничен: требуется авторизация");
+                mainContent.classList.add('hidden');
+                navBar.classList.add('hidden');
+                authModal.classList.remove('hidden');
                 updateUI(false);
             }
-            loadWords();
         }
 
         function updateUI(loggedIn, email = '') {
@@ -163,13 +154,7 @@
                         <button onclick="logout()" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>
                     </div>
                 `;
-                if (userRole === 'admin') {
-                    console.log("Отображаю кнопку админа!");
-                    adminBtn.classList.remove('hidden');
-                }
-            } else {
-                authSection.innerHTML = `<button onclick="showAuthModal()" class="text-gray-400 hover:text-brand font-bold text-sm transition">Log In</button>`;
-                adminBtn.classList.add('hidden');
+                if (userRole === 'admin') adminBtn.classList.remove('hidden');
             }
         }
 
@@ -189,7 +174,6 @@
             else window.location.reload();
         }
 
-        // --- ВОКАБУЛЯР ---
         async function loadWords() {
             const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
             if (data) { wordsData = data; renderWords(data); }
@@ -242,8 +226,8 @@
             const w = wordsData.find(item => item.id === id);
             document.getElementById('detailCard').innerHTML = `
                 <div class="space-y-6">
-                    <h2 class="text-2xl font-black text-brand">Edit Card</h2>
-                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none">
+                    <h2 class="text-2xl font-black text-brand tracking-tighter">Edit Card</h2>
+                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none pb-2">
                     <div class="grid grid-cols-2 gap-4">
                         <select id="e-level" class="p-4 bg-gray-50 rounded-2xl outline-none">
                             <option ${w.level === 'Advanced' ? 'selected' : ''}>Advanced</option>
@@ -257,7 +241,7 @@
                     <textarea id="e-def" rows="3" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.definition || ''}</textarea>
                     <textarea id="e-ex" rows="2" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.example || ''}</textarea>
                     <div class="flex gap-4">
-                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl">Save</button>
+                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl shadow-lg">Save Changes</button>
                         <button onclick="showDetail('${id}')" class="px-8 bg-gray-100 text-gray-400 font-black py-4 rounded-2xl">Cancel</button>
                     </div>
                 </div>
@@ -286,8 +270,6 @@
 
         function hideDetail() { document.getElementById('detailView').classList.add('hidden'); document.getElementById('listView').classList.remove('hidden'); }
         function toggleAdminPanel() { document.getElementById('adminPanel').classList.toggle('hidden'); }
-        function showAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
-        function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
 
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
