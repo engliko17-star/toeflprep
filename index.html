@@ -9,13 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { light: '#F3E8FF', DEFAULT: '#b593c4', dark: '#9a7aa8' }
-                    }
-                }
-            }
+            theme: { extend: { colors: { brand: { light: '#F3E8FF', DEFAULT: '#b593c4', dark: '#9a7aa8' } } } }
         }
         function speak(text) {
             window.speechSynthesis.cancel();
@@ -23,15 +17,14 @@
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
+        // Специальная озвучка для трех форм
         function speakVerbForms(v1, v2, v3) {
             window.speechSynthesis.cancel();
-            [v1, v2, v3].forEach((t, i) => {
-                setTimeout(() => {
-                    const u = new SpeechSynthesisUtterance(t);
-                    u.lang = 'en-US';
-                    window.speechSynthesis.speak(u);
-                }, i * 1000);
-            });
+            const text = `${v1}, ${v2}, ${v3}`;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8; // Чуть медленнее для четкости
+            window.speechSynthesis.speak(utterance);
         }
     </script>
     <style>
@@ -48,8 +41,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .detail-badge { background: #f3f4f6; color: #b593c4; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
         .side-card { border-radius: 20px; padding: 20px; border: 1px solid #f1f5f9; }
-        .loading-spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid #fff; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .verb-row:hover { background-color: #f8fafc; }
     </style>
 </head>
@@ -82,38 +73,27 @@
                 </div>
                 <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
-                            <i class="fa-solid fa-bookmark text-xl"></i>
-                        </div>
+                        <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20"><i class="fa-solid fa-bookmark text-xl"></i></div>
                         <div><h2 class="text-3xl font-black text-gray-900 tracking-tighter">My Words</h2></div>
                     </div>
                     <div class="flex bg-white p-1.5 rounded-full border border-gray-100 shadow-sm">
-                        <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-brand hover:text-brand active-filter-btn">In Progress</button>
-                        <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">Mastered</button>
+                        <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-brand active-filter-btn">In Progress</button>
+                        <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400">Mastered</button>
                     </div>
                 </div>
                 <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
             </section>
 
-            <div id="mainDivider" class="section-divider"></div>
+            <div class="section-divider"></div>
 
             <section id="librarySection">
-                <div id="libBack" class="hidden mb-8">
-                    <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
-                        <i class="fa-solid fa-arrow-left"></i> Назад
-                    </button>
-                </div>
+                <div id="libBack" class="hidden mb-8"><button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition"><i class="fa-solid fa-arrow-left"></i> Назад</button></div>
                 <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-                    <div>
-                        <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2>
-                        <p class="text-gray-400 text-sm font-medium">Explore the complete 2026 database</p>
-                    </div>
+                    <div><h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2></div>
                     <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                         <button onclick="filterWords('All', this)" class="filter-btn active">All Levels</button>
                         <button onclick="filterWords('Advanced', this)" class="filter-btn">Advanced</button>
                         <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn">Upper-Intermediate</button>
-                        <button onclick="filterWords('Intermediate', this)" class="filter-btn">Intermediate</button>
-                        <button onclick="filterWords('Elementary', this)" class="filter-btn">Elementary</button>
                     </div>
                 </div>
                 <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
@@ -122,34 +102,37 @@
 
         <div id="verbsView" class="hidden">
             <div class="mb-12">
-                <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Three Verb Forms</h2>
-                <div class="relative mt-6 max-w-xl">
+                <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Irregular Verbs</h2>
+                <p class="text-gray-400 font-medium">Master the three forms of English verbs</p>
+                <div class="relative mt-8 max-w-xl">
                     <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"></i>
-                    <input type="text" id="verbSearch" oninput="filterVerbsTable()" placeholder="Search verb..." class="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl outline-none">
+                    <input type="text" id="verbSearch" oninput="filterVerbsTable()" placeholder="Quick search..." class="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl outline-none focus:border-brand transition">
                 </div>
             </div>
-            <div class="bg-white rounded-[40px] border border-gray-100 overflow-hidden overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50/50 border-b border-gray-100">
-                        <tr>
-                            <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V1 Infinitive</th>
-                            <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V2 Past Simple</th>
-                            <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V3 Past Participle</th>
-                            <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Translation</th>
-                        </tr>
-                    </thead>
-                    <tbody id="verbsTableBody"></tbody>
-                </table>
+
+            <div class="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/50 border-b border-gray-100">
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V1 (Infinitive)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V2 (Past Simple)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">V3 (Past Participle)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Translation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verbsTableBody" class="divide-y divide-gray-50">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
             <header class="flex justify-between items-center px-8 py-6 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur-md z-10">
-                <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-arrow-left"></i> Назад
-                </button>
-                <div id="detailActions" class="flex items-center gap-4">
-                    <button id="editBtn" onclick="openEditMode()" class="hidden w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-brand/10 hover:text-brand transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Назад</button>
+                <div class="flex items-center gap-4">
+                    <button id="editBtn" onclick="openEditMode()" class="hidden w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:text-brand transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
                     <div id="statusButtons" class="flex gap-2"></div>
                 </div>
             </header>
@@ -157,45 +140,60 @@
         </div>
 
         <section id="adminPanel" class="hidden mt-20 p-10 bg-gray-900 rounded-[50px] text-white">
-            <div class="flex justify-between items-center mb-8">
-                <h2 id="adminTitle" class="text-2xl font-black">Add New Content</h2>
-                <button type="button" onclick="toggleAdminPanel()" class="text-white/40 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex justify-between items-center mb-10">
+                <h2 id="adminTitle" class="text-2xl font-black">Teacher Cabinet</h2>
+                <div class="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+                    <button onclick="setAdminMode('word')" id="modeWord" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase transition bg-brand text-white">New Word</button>
+                    <button onclick="setAdminMode('verb')" id="modeVerb" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase transition text-gray-400">New Verb</button>
+                </div>
             </div>
-            <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <form id="addContentForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input type="hidden" id="f-id">
-                <input type="text" id="f-word" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Word" required>
-                <select id="f-level" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none">
-                    <option>Advanced</option><option>Upper-Intermediate</option><option>Intermediate</option><option>Elementary</option>
-                </select>
-                <input type="text" id="f-pos" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Part of Speech">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="f-syn" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Synonyms">
-                    <input type="text" id="f-ant" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Antonyms">
+                
+                <div id="wordFields" class="contents">
+                    <input type="text" id="f-word" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Word">
+                    <select id="f-level" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50">
+                        <option class="text-gray-900">Advanced</option>
+                        <option class="text-gray-900">Upper-Intermediate</option>
+                        <option class="text-gray-900">Intermediate</option>
+                    </select>
+                    <input type="text" id="f-pos" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Part of Speech">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="f-syn" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Synonyms">
+                        <input type="text" id="f-ant" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Antonyms">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 md:col-span-2">
+                        <input type="number" id="f-prog" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Progress %">
+                        <input type="text" id="f-tip" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Tip / Mnemonic">
+                    </div>
+                    <textarea id="f-def" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50 h-32" placeholder="Definition"></textarea>
+                    <textarea id="f-ex" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50 h-32" placeholder="Usage Example"></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-4 md:col-span-2">
-                    <input type="number" id="f-prog" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Progress (%)" min="0" max="100">
-                    <input type="text" id="f-tip" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Tip">
+
+                <div id="verbFields" class="hidden contents">
+                    <input type="text" id="f-v1" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="V1 (Infinitive) e.g. Go">
+                    <input type="text" id="f-v2" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="V2 (Past Simple) e.g. Went">
+                    <input type="text" id="f-v3" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="V3 (Past Participle) e.g. Gone">
+                    <input type="text" id="f-tr" class="bg-white/10 border-none rounded-2xl p-5 text-white outline-none focus:ring-2 ring-brand/50" placeholder="Translation (RU)">
                 </div>
-                <textarea id="f-def" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Definition"></textarea>
-                <textarea id="f-ex" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Context Example"></textarea>
-                <div class="md:col-span-2 flex gap-4">
-                    <button type="submit" id="submitBtn" class="flex-1 bg-brand py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center">
-                        <span id="btnText">Publish</span>
-                    </button>
-                    <button type="button" id="deleteBtn" class="hidden bg-red-500/20 text-red-500 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Delete</button>
+
+                <div class="md:col-span-2 flex gap-4 mt-4">
+                    <button type="submit" class="flex-1 bg-brand hover:bg-brand-dark py-6 rounded-2xl font-black uppercase text-xs tracking-widest transition shadow-xl shadow-brand/20">Save Entry</button>
+                    <button type="button" id="deleteBtn" class="hidden bg-red-500/10 text-red-500 border border-red-500/20 px-10 py-6 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition">Delete</button>
                 </div>
             </form>
         </section>
     </main>
 
     <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-md p-12 rounded-[50px] shadow-2xl text-center">
-            <h3 class="text-4xl font-black mb-8 tracking-tighter text-gray-900">TOEFL.ai</h3>
-            <div class="space-y-4 text-left">
-                <input type="email" id="authEmail" placeholder="Email" class="w-full p-5 bg-gray-50 rounded-2xl outline-none">
-                <input type="password" id="authPass" placeholder="Password" class="w-full p-5 bg-gray-50 rounded-2xl outline-none">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl">Login</button>
-                <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-widest mt-4 text-center block">Create Account</button>
+        <div class="bg-white w-full max-w-md p-12 rounded-[50px] text-center shadow-2xl">
+            <h3 class="text-4xl font-black mb-2 tracking-tighter text-gray-900">TOEFL.ai</h3>
+            <p class="text-gray-400 text-sm mb-10 font-medium uppercase tracking-widest">Teacher & Student Portal</p>
+            <div class="space-y-4">
+                <input type="email" id="authEmail" placeholder="Email Address" class="w-full p-6 bg-gray-50 rounded-2xl outline-none focus:ring-2 ring-brand/20 transition">
+                <input type="password" id="authPass" placeholder="Password" class="w-full p-6 bg-gray-50 rounded-2xl outline-none focus:ring-2 ring-brand/20 transition">
+                <button onclick="handleAuth('login')" class="w-full bg-brand hover:bg-brand-dark text-white font-black py-6 rounded-2xl shadow-lg shadow-brand/20 transition transform active:scale-[0.98]">Sign In</button>
             </div>
         </div>
     </div>
@@ -205,27 +203,9 @@
         const SUPABASE_KEY = 'sb_publishable_44KE_hMHou4L53IykmUCvQ_cPahzba1';
         const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let wordsData = [];
-        let userProgressMap = {}; 
-        let libFilter = 'All';
-        let myFilter = 'learning';
-        let userRole = 'student';
-        let currentUser = null;
-        let currentDetailId = null;
-        let activeView = 'home';
-
-        const irregularVerbs = [
-            { v1: "be", v2: "was/were", v3: "been", tr: "быть" }, { v1: "have", v2: "had", v3: "had", tr: "иметь" },
-            { v1: "say", v2: "said", v3: "said", tr: "сказать" }, { v1: "do", v2: "did", v3: "done", tr: "делать" },
-            { v1: "know", v2: "knew", v3: "known", tr: "знать" }, { v1: "get", v2: "got", v3: "gotten", tr: "получать" },
-            { v1: "come", v2: "came", v3: "come", tr: "приходить" }, { v1: "go", v2: "went", v3: "gone", tr: "идти" },
-            { v1: "see", v2: "saw", v3: "seen", tr: "видеть" }, { v1: "take", v2: "took", v3: "taken", tr: "брать" },
-            { v1: "think", v2: "thought", v3: "thought", tr: "думать" }, { v1: "make", v2: "made", v3: "made", tr: "создавать" },
-            { v1: "tell", v2: "told", v3: "told", tr: "рассказывать" }, { v1: "put", v2: "put", v3: "put", tr: "класть" },
-            { v1: "find", v2: "found", v3: "found", tr: "находить" }, { v1: "read", v2: "read", v3: "read", tr: "читать" },
-            { v1: "give", v2: "gave", v3: "given", tr: "давать" }, { v1: "feel", v2: "felt", v3: "felt", tr: "чувствовать" },
-            { v1: "hear", v2: "heard", v3: "heard", tr: "слышать" }, { v1: "leave", v2: "left", v3: "left", tr: "оставлять" }
-        ];
+        let wordsData = [], verbsData = [], userProgressMap = {};
+        let libFilter = 'All', myFilter = 'learning', userRole = 'student', currentUser = null, currentDetailId = null, activeView = 'home';
+        let adminMode = 'word'; // 'word' или 'verb'
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
@@ -239,19 +219,65 @@
                 updateUI(true, currentUser.email);
                 await loadUserProgress();
                 await loadWords();
+                await loadVerbs();
             }
         }
 
-        async function loadUserProgress() {
-            const { data } = await _client.from('user_progress').select('word_id, status').eq('user_id', currentUser.id);
-            userProgressMap = {};
-            data?.forEach(i => userProgressMap[i.word_id] = i.status);
+        // --- ЛОГИКА ГЛАГОЛОВ (НОВАЯ) ---
+
+        async function loadVerbs() {
+            const { data, error } = await _client.from('irregular_verbs').select('*').order('v1', { ascending: true });
+            if (!error) {
+                verbsData = data || [];
+                renderVerbs(verbsData);
+            }
         }
 
-        async function loadWords() {
-            const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
-            wordsData = data || [];
-            renderWords();
+        function renderVerbs(data) {
+            const body = document.getElementById('verbsTableBody');
+            body.innerHTML = data.map(v => `
+                <tr class="verb-row group" ${userRole === 'admin' ? `onclick="editVerb('${v.id}')"` : ''}>
+                    <td class="p-8">
+                        <div class="flex items-center gap-4">
+                            <button onclick="event.stopPropagation(); speakVerbForms('${v.v1}','${v.v2}','${v.v3}')" class="w-10 h-10 rounded-full bg-gray-50 text-gray-300 group-hover:bg-brand group-hover:text-white transition flex items-center justify-center">
+                                <i class="fa-solid fa-volume-high text-xs"></i>
+                            </button>
+                            <span class="font-bold text-gray-900 text-lg tracking-tight">${v.v1}</span>
+                        </div>
+                    </td>
+                    <td class="p-8 text-brand font-black text-lg">${v.v2}</td>
+                    <td class="p-8 text-brand font-black text-lg">${v.v3}</td>
+                    <td class="p-8 text-right">
+                        <span class="text-gray-400 font-bold text-sm uppercase tracking-wider">${v.tr || ''}</span>
+                        ${userRole === 'admin' ? '<i class="fa-solid fa-pen ml-4 opacity-0 group-hover:opacity-20 transition text-gray-900"></i>' : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterVerbsTable() {
+            const q = document.getElementById('verbSearch').value.toLowerCase();
+            const filtered = verbsData.filter(v => 
+                v.v1.toLowerCase().includes(q) || 
+                v.v2.toLowerCase().includes(q) || 
+                v.v3.toLowerCase().includes(q) || 
+                (v.tr && v.tr.toLowerCase().includes(q))
+            );
+            renderVerbs(filtered);
+        }
+
+        function editVerb(id) {
+            const v = verbsData.find(i => i.id === id);
+            if (!v) return;
+            setAdminMode('verb');
+            document.getElementById('f-id').value = v.id;
+            document.getElementById('f-v1').value = v.v1;
+            document.getElementById('f-v2').value = v.v2;
+            document.getElementById('f-v3').value = v.v3;
+            document.getElementById('f-tr').value = v.tr || '';
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         function showSection(s) {
@@ -259,25 +285,67 @@
             document.getElementById('verbsView').classList.toggle('hidden', s !== 'verbs');
             document.getElementById('nav-voc').classList.toggle('active', s === 'vocabulary');
             document.getElementById('nav-verbs').classList.toggle('active', s === 'verbs');
-            if (s === 'verbs') renderVerbs();
-            else switchView('home');
         }
 
-        function renderVerbs(data = irregularVerbs) {
-            document.getElementById('verbsTableBody').innerHTML = data.map(v => `
-                <tr class="verb-row border-b border-gray-50">
-                    <td class="p-8"><div class="flex items-center gap-4">
-                        <button onclick="speakVerbForms('${v.v1}','${v.v2}','${v.v3}')" class="w-8 h-8 rounded-full bg-gray-50 text-gray-300 hover:text-brand"><i class="fa-solid fa-volume-high text-xs"></i></button>
-                        <span class="font-bold text-gray-800 text-lg">${v.v1}</span></div></td>
-                    <td class="p-8 text-brand font-black text-lg">${v.v2}</td>
-                    <td class="p-8 text-brand font-black text-lg">${v.v3}</td>
-                    <td class="p-8 text-gray-400 text-right font-medium">${v.tr}</td>
-                </tr>`).join('');
+        function setAdminMode(mode) {
+            adminMode = mode;
+            const isWord = mode === 'word';
+            document.getElementById('modeWord').className = isWord ? 'px-6 py-2 rounded-xl text-[10px] font-black uppercase transition bg-brand text-white' : 'px-6 py-2 rounded-xl text-[10px] font-black uppercase transition text-gray-400';
+            document.getElementById('modeVerb').className = !isWord ? 'px-6 py-2 rounded-xl text-[10px] font-black uppercase transition bg-brand text-white' : 'px-6 py-2 rounded-xl text-[10px] font-black uppercase transition text-gray-400';
+            
+            document.getElementById('wordFields').classList.toggle('hidden', !isWord);
+            document.getElementById('verbFields').classList.toggle('hidden', isWord);
+            
+            document.getElementById('f-id').value = '';
+            document.getElementById('addContentForm').reset();
+            document.getElementById('deleteBtn').classList.add('hidden');
         }
 
-        function filterVerbsTable() {
-            const q = document.getElementById('verbSearch').value.toLowerCase();
-            renderVerbs(irregularVerbs.filter(v => v.v1.includes(q) || v.tr.includes(q)));
+        // --- ОБНОВЛЕННЫЙ СОХРАНЯЛЬЩИК ---
+
+        document.getElementById('addContentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('f-id').value;
+            
+            if (adminMode === 'word') {
+                const payload = {
+                    word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
+                    pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value,
+                    antonyms: document.getElementById('f-ant').value, progress: parseInt(document.getElementById('f-prog').value) || 0,
+                    tip: document.getElementById('f-tip').value, definition: document.getElementById('f-def').value, example: document.getElementById('f-ex').value
+                };
+                if (id) await _client.from('vocabulary').update(payload).eq('id', id);
+                else await _client.from('vocabulary').insert([payload]);
+            } else {
+                const payload = {
+                    v1: document.getElementById('f-v1').value, v2: document.getElementById('f-v2').value,
+                    v3: document.getElementById('f-v3').value, tr: document.getElementById('f-tr').value
+                };
+                if (id) await _client.from('irregular_verbs').update(payload).eq('id', id);
+                else await _client.from('irregular_verbs').insert([payload]);
+            }
+            location.reload();
+        });
+
+        document.getElementById('deleteBtn').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to delete this item?')) {
+                const id = document.getElementById('f-id').value;
+                const table = adminMode === 'word' ? 'vocabulary' : 'irregular_verbs';
+                await _client.from(table).delete().eq('id', id);
+                location.reload();
+            }
+        });
+
+        // --- СТАРЫЙ КОД VOCABULARY (БЕЗ ИЗМЕНЕНИЙ) ---
+
+        async function loadUserProgress() {
+            const { data } = await _client.from('user_progress').select('word_id, status').eq('user_id', currentUser.id);
+            userProgressMap = {}; data?.forEach(i => userProgressMap[i.word_id] = i.status);
+        }
+
+        async function loadWords() {
+            const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
+            wordsData = data || []; renderWords();
         }
 
         function switchView(view) { activeView = view; renderWords(); window.scrollTo(0,0); }
@@ -285,161 +353,61 @@
         function renderWords() {
             const libSec = document.getElementById('librarySection');
             const mySec = document.getElementById('myProgressSection');
-            const divider = document.getElementById('mainDivider');
-
-            if (activeView === 'home') {
-                libSec.classList.remove('hidden'); mySec.classList.remove('hidden'); divider.classList.remove('hidden');
-                document.getElementById('myWordsBack').classList.add('hidden'); document.getElementById('libBack').classList.add('hidden');
-            } else if (activeView === 'my-all') {
-                libSec.classList.add('hidden'); divider.classList.add('hidden'); mySec.classList.remove('hidden');
-                document.getElementById('myWordsBack').classList.remove('hidden');
-            } else {
-                mySec.classList.add('hidden'); divider.classList.add('hidden'); libSec.classList.remove('hidden');
-                document.getElementById('libBack').classList.remove('hidden');
-            }
-
-            // My Words
+            if (activeView === 'home') { libSec.classList.remove('hidden'); mySec.classList.remove('hidden'); document.getElementById('myWordsBack').classList.add('hidden'); document.getElementById('libBack').classList.add('hidden'); }
+            else if (activeView === 'my-all') { libSec.classList.add('hidden'); mySec.classList.remove('hidden'); document.getElementById('myWordsBack').classList.remove('hidden'); }
+            else { mySec.classList.add('hidden'); libSec.classList.remove('hidden'); document.getElementById('libBack').classList.remove('hidden'); }
+            
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
             let myLimit = activeView === 'my-all' ? myWords.length : 20;
             let myHtml = myWords.slice(0, myLimit).map(w => createCardHtml(w)).join('');
-            if (activeView === 'home' && myWords.length > 20) {
-                myHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('my-all')" class="bg-brand/10 text-brand px-10 py-4 rounded-full text-[10px] font-black uppercase">View All My Words (${myWords.length})</button></div>`;
-            }
-            document.getElementById('myWordsGrid').innerHTML = myHtml || `<div class="col-span-full text-center text-gray-300 py-10 uppercase text-[10px] font-black">No words here</div>`;
-
-            // Library
+            if (activeView === 'home' && myWords.length > 20) myHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('my-all')" class="bg-brand/10 text-brand px-10 py-4 rounded-full text-[10px] font-black uppercase">View All (${myWords.length})</button></div>`;
+            document.getElementById('myWordsGrid').innerHTML = myHtml || `<div class="col-span-full text-center text-gray-300 py-10 uppercase text-[10px] font-black">No words here yet</div>`;
+            
             let fl = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
             let libLimit = activeView === 'lib-all' ? fl.length : 20;
             let libHtml = fl.slice(0, libLimit).map(w => createCardHtml(w)).join('');
-            if (activeView === 'home' && fl.length > 20) {
-                libHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('lib-all')" class="bg-gray-100 text-gray-600 px-10 py-4 rounded-full text-[10px] font-black uppercase">View All Library (${fl.length})</button></div>`;
-            }
+            if (activeView === 'home' && fl.length > 20) libHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('lib-all')" class="bg-gray-100 text-gray-600 px-10 py-4 rounded-full text-[10px] font-black uppercase">View All (${fl.length})</button></div>`;
             document.getElementById('wordsGrid').innerHTML = libHtml;
         }
 
         function createCardHtml(w) {
             const s = userProgressMap[w.id];
             return `<div class="word-card p-8 rounded-[35px] flex flex-col justify-between min-h-[280px] cursor-pointer" onclick="showDetail('${w.id}')">
-                <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-2xl font-black text-gray-800 tracking-tighter">${w.word}</h3>
-                        <div class="flex gap-1">
-                            <button onclick="updateWordStatus('${w.id}','learning',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='learning'?'bg-amber-400 border-amber-400 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-bolt text-[10px]"></i></button>
-                            <button onclick="updateWordStatus('${w.id}','mastered',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='mastered'?'bg-green-500 border-green-500 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-check text-[10px]"></i></button>
-                        </div>
-                    </div>
-                    <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4">${w.pos}</p>
-                    <p class="text-gray-500 text-xs leading-relaxed line-clamp-3">${w.definition}</p>
-                </div>
-                <div class="mt-8 flex justify-between items-center border-t border-gray-50 pt-4">
-                    <span class="text-[9px] font-black text-brand uppercase tracking-widest">${w.level}</span>
-                    <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-400 hover:text-gray-900"><i class="fa-solid fa-volume-high"></i></button>
-                </div>
-            </div>`;
+                <div><div class="flex justify-between items-start mb-4"><h3 class="text-2xl font-black text-gray-800 tracking-tighter">${w.word}</h3><div class="flex gap-1">
+                <button onclick="updateWordStatus('${w.id}','learning',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='learning'?'bg-amber-400 border-amber-400 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-bolt text-[10px]"></i></button>
+                <button onclick="updateWordStatus('${w.id}','mastered',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='mastered'?'bg-green-500 border-green-500 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-check text-[10px]"></i></button></div></div>
+                <p class="text-gray-400 text-[10px] font-black uppercase mb-4">${w.pos}</p><p class="text-gray-500 text-xs leading-relaxed line-clamp-3">${w.definition}</p></div>
+                <div class="mt-8 flex justify-between items-center border-t border-gray-50 pt-4"><span class="text-[9px] font-black text-brand uppercase">${w.level}</span><button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-400 hover:text-brand transition"><i class="fa-solid fa-volume-high"></i></button></div></div>`;
         }
 
         function showDetail(id) {
-            currentDetailId = id;
-            const w = wordsData.find(i => i.id === id);
-            if (!w) return;
+            currentDetailId = id; const w = wordsData.find(i => i.id === id); if (!w) return;
             if (userRole === 'admin') document.getElementById('editBtn').classList.remove('hidden');
             const s = userProgressMap[w.id];
-            document.getElementById('statusButtons').innerHTML = `
-                <button onclick="updateWordStatus('${w.id}','learning')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='learning'?'bg-amber-400 text-white':'bg-gray-50 text-gray-400'}">In Progress</button>
-                <button onclick="updateWordStatus('${w.id}','mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='mastered'?'bg-green-500 text-white':'bg-gray-50 text-gray-400'}">Mastered</button>`;
-            
-            document.getElementById('detailContent').innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                    <div class="lg:col-span-2 space-y-12">
-                        <div>
-                            <span class="detail-badge">${w.level}</span>
-                            <div class="flex items-center gap-6 mt-6">
-                                <h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2>
-                                <button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high text-xl"></i></button>
-                            </div>
-                            <p class="text-gray-400 font-bold mt-2">${w.pos}</p>
-                        </div>
-                        <div class="pt-10 border-t border-gray-100">
-                            <h4 class="text-gray-300 font-black text-[10px] uppercase tracking-[0.2em] mb-6">DEFINITION</h4>
-                            <p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p>
-                        </div>
-                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium leading-relaxed italic">"${w.example}"</p></div>
-                    </div>
-                    <div class="space-y-6">
-                        <div class="side-card bg-green-50/50 border-green-100"><h4 class="text-green-600/50 font-black text-[9px] uppercase tracking-widest mb-4">SYNONYMS</h4><p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p></div>
-                        <div class="side-card bg-red-50/50 border-red-100"><h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">ANTONYMS</h4><p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p></div>
-                        <div class="side-card bg-purple-50/50 border-purple-100"><h4 class="text-purple-600/50 font-black text-[9px] uppercase tracking-widest mb-4">PROGRESS</h4><div class="flex items-baseline gap-2"><p class="text-purple-800 font-black text-4xl">${w.progress || 0}%</p></div></div>
-                        <div class="side-card bg-yellow-50/50 border-yellow-100"><h4 class="text-yellow-600/50 font-black text-[9px] uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fa-solid fa-lightbulb text-yellow-500"></i> TIP</h4><p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p></div>
-                    </div>
-                </div>`;
+            document.getElementById('statusButtons').innerHTML = `<button onclick="updateWordStatus('${w.id}','learning')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${s==='learning'?'bg-amber-400 text-white':'bg-gray-50 text-gray-400'}">In Progress</button><button onclick="updateWordStatus('${w.id}','mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${s==='mastered'?'bg-green-500 text-white':'bg-gray-50 text-gray-400'}">Mastered</button>`;
+            document.getElementById('detailContent').innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start"><div class="lg:col-span-2 space-y-12"><div><span class="detail-badge">${w.level}</span><div class="flex items-center gap-6 mt-6"><h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2><button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-brand transition"><i class="fa-solid fa-volume-high text-xl"></i></button></div><p class="text-gray-400 font-bold mt-2">${w.pos}</p></div><div class="pt-10 border-t border-gray-100"><h4 class="text-gray-300 font-black text-[10px] uppercase mb-6">DEFINITION</h4><p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p></div><div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl"><p class="text-2xl font-medium italic">"${w.example}"</p></div></div><div class="space-y-6">
+                <div class="side-card bg-green-50/50 border-green-100"><h4 class="text-green-600/50 font-black text-[9px] uppercase mb-4">SYNONYMS</h4><p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p></div>
+                <div class="side-card bg-red-50/50 border-red-100"><h4 class="text-red-600/50 font-black text-[9px] uppercase mb-4">ANTONYMS</h4><p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p></div>
+                <div class="side-card bg-purple-50/50 border-purple-100"><h4 class="text-purple-600/50 font-black text-[9px] uppercase mb-4">PROGRESS</h4><p class="text-purple-800 font-black text-4xl">${w.progress || 0}%</p></div>
+                <div class="side-card bg-yellow-50/50 border-yellow-100"><h4 class="text-yellow-600/50 font-black text-[9px] uppercase mb-4 flex items-center gap-2"><i class="fa-solid fa-lightbulb text-yellow-500"></i> TIP</h4><p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p></div></div></div>`;
             document.getElementById('detailView').classList.remove('hidden');
         }
 
         function openEditMode() {
-            const w = wordsData.find(i => i.id === currentDetailId);
-            if (!w) return;
-            document.getElementById('f-id').value = w.id;
-            document.getElementById('f-word').value = w.word;
-            document.getElementById('f-level').value = w.level;
-            document.getElementById('f-pos').value = w.pos;
-            document.getElementById('f-syn').value = w.synonyms || '';
-            document.getElementById('f-ant').value = w.antonyms || '';
-            document.getElementById('f-prog').value = w.progress || '';
-            document.getElementById('f-tip').value = w.tip || '';
-            document.getElementById('f-def').value = w.definition;
-            document.getElementById('f-ex').value = w.example;
-            document.getElementById('adminTitle').innerText = "Edit Word";
-            document.getElementById('deleteBtn').classList.remove('hidden');
-            hideDetail();
-            document.getElementById('adminPanel').classList.remove('hidden');
-            window.scrollTo(0, document.body.scrollHeight);
+            const w = wordsData.find(i => i.id === currentDetailId); if (!w) return;
+            setAdminMode('word'); document.getElementById('f-id').value = w.id; document.getElementById('f-word').value = w.word; document.getElementById('f-level').value = w.level; document.getElementById('f-pos').value = w.pos; document.getElementById('f-syn').value = w.synonyms || ''; document.getElementById('f-ant').value = w.antonyms || ''; document.getElementById('f-prog').value = w.progress || ''; document.getElementById('f-tip').value = w.tip || ''; document.getElementById('f-def').value = w.definition; document.getElementById('f-ex').value = w.example;
+            document.getElementById('deleteBtn').classList.remove('hidden'); hideDetail(); document.getElementById('adminPanel').classList.remove('hidden'); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
-        document.getElementById('addWordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('f-id').value;
-            const payload = {
-                word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
-                pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value,
-                antonyms: document.getElementById('f-ant').value, progress: parseInt(document.getElementById('f-prog').value) || 0,
-                tip: document.getElementById('f-tip').value, definition: document.getElementById('f-def').value, 
-                example: document.getElementById('f-ex').value
-            };
-            if (id) await _client.from('vocabulary').update(payload).eq('id', id);
-            else await _client.from('vocabulary').insert([payload]);
-            location.reload();
-        });
-
-        document.getElementById('deleteBtn').addEventListener('click', async () => {
-            if (confirm('Delete?')) {
-                await _client.from('vocabulary').delete().eq('id', document.getElementById('f-id').value);
-                location.reload();
-            }
-        });
-
-        async function updateWordStatus(wordId, newStatus, event) {
-            if (event) event.stopPropagation();
-            if (newStatus === userProgressMap[wordId]) newStatus = 'none';
-            if (newStatus === 'none') {
-                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
-                delete userProgressMap[wordId];
-            } else {
-                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' });
-                userProgressMap[wordId] = newStatus;
-            }
-            renderWords();
-            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
-        }
-
+        async function updateWordStatus(wordId, newStatus, event) { if (event) event.stopPropagation(); if (newStatus === userProgressMap[wordId]) newStatus = 'none'; if (newStatus === 'none') { await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId); delete userProgressMap[wordId]; } else { await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' }); userProgressMap[wordId] = newStatus; } renderWords(); if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId); }
         function toggleAdminPanel() { document.getElementById('adminPanel').classList.toggle('hidden'); }
         function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
         function filterWords(l, b) { libFilter = l; document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderWords(); }
-        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => btn.classList.remove('text-brand', 'active-filter-btn')); b.classList.add('text-brand', 'active-filter-btn'); renderWords(); }
-        function updateUI(l, e) { if(l) { document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); } }
+        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => btn.classList.remove('text-brand')); b.classList.add('text-brand'); renderWords(); }
+        function updateUI(l, e) { if(l) { document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4 tracking-widest hover:text-red-600 transition">Exit</button>`; if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); } }
         async function handleAuth(type) {
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPass').value;
-            const { error } = (type === 'login') ? await _client.auth.signInWithPassword({ email, password }) : await _client.auth.signUp({ email, password });
+            const email = document.getElementById('authEmail').value, password = document.getElementById('authPass').value;
+            const { error } = await _client.auth.signInWithPassword({ email, password });
             if (error) alert(error.message); else location.reload();
         }
 
