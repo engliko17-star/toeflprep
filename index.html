@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOEFL Vocabulary </title>
+    <title>TOEFL Vocabulary Library</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            light: '#F3E8FF', // Светло-лавандовый для бейджей
+                            light: '#F3E8FF', 
                             DEFAULT: '#b593c4', 
                             dark: '#9a7aa8',
                         }
@@ -29,16 +30,17 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #ffffff; }
+        .word-card { transition: all 0.3s ease; }
+        .word-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
 <body>
 
-    <nav class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-        <div class="font-bold text-xl text-gray-800">TOEFL Prep</div>
-        <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-500 items-center">
+    <nav class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="font-bold text-xl text-gray-800 tracking-tight">TOEFL Prep</div>
+        <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400 items-center">
             <a href="#" class="text-brand border-b-2 border-brand pb-1">Vocabulary</a>
-            <a href="#" class="hover:text-gray-900 transition">General Prep</a>
-            <a href="#" class="hover:text-gray-900 transition">Writing</a>
+            <a href="#teacher-panel" class="hover:text-gray-900 transition text-xs">Add New Word</a>
             <button class="bg-brand text-white px-6 py-2 rounded shadow-sm hover:bg-brand-dark transition">Sign In</button>
         </div>
     </nav>
@@ -47,109 +49,150 @@
         
         <div id="listView">
             <h1 class="text-4xl font-bold text-brand mb-2">Vocabulary Library</h1>
-            <p class="text-gray-400 text-sm mb-8">Expand your vocabulary with our comprehensive word library</p>
+            <p class="text-gray-400 text-sm mb-10">Expand your vocabulary with our comprehensive word library</p>
 
-            <div class="flex space-x-2 mb-10">
-                <button class="bg-brand text-white px-5 py-2 rounded text-sm font-medium">All Levels</button>
-                <button class="bg-white border border-gray-200 text-gray-500 px-5 py-2 rounded text-sm hover:bg-gray-50">Advanced</button>
-                <button class="bg-white border border-gray-200 text-gray-500 px-5 py-2 rounded text-sm hover:bg-gray-50">Intermediate</button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[220px]" onclick="showDetail()">
-                    <div>
-                        <div class="flex justify-between items-start mb-1">
-                            <h3 class="text-xl font-bold text-gray-800 group-hover:text-brand transition">Abate</h3>
-                            <button onclick="event.stopPropagation(); speak('Abate')" class="text-brand opacity-60 group-hover:opacity-100">
-                                <i class="fa-solid fa-volume-high"></i>
-                            </button>
-                        </div>
-                        <p class="text-gray-400 italic text-xs mb-3">verb</p>
-                        <p class="text-gray-500 text-sm leading-relaxed line-clamp-3">
-                            (of something perceived as hostile, threatening, or negative) become less intense or widespread.
-                        </p>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <span class="inline-block bg-brand-light text-brand-dark text-[10px] px-3 py-1 rounded font-bold uppercase tracking-wider">Advanced</span>
-                    </div>
+            <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full py-20 text-center text-gray-300 italic text-lg">
+                    Loading your library...
                 </div>
-
-                <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex flex-col justify-between min-h-[220px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-1">
-                            <h3 class="text-xl font-bold text-gray-800">Benevolent</h3>
-                            <button onclick="speak('Benevolent')" class="text-brand opacity-60"><i class="fa-solid fa-volume-high"></i></button>
-                        </div>
-                        <p class="text-gray-400 italic text-xs mb-3">adjective</p>
-                        <p class="text-gray-500 text-sm leading-relaxed">Well meaning and kindly.</p>
-                    </div>
-                    <div class="mt-4">
-                        <span class="inline-block bg-brand-light text-brand-dark text-[10px] px-3 py-1 rounded font-bold uppercase tracking-wider">Intermediate</span>
-                    </div>
-                </div>
-
             </div>
         </div>
 
         <div id="detailView" class="hidden max-w-3xl mx-auto">
             <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-700 text-sm mb-8 flex items-center transition">
-                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Vocabulary
+                <i class="fa-solid fa-arrow-left mr-2 text-xs"></i> Back to Vocabulary
             </button>
-
-            <div class="bg-white p-10 rounded-lg border border-gray-100 shadow-sm">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-5xl font-bold text-brand">Abate</h2>
-                    <button onclick="speak('Abate')" class="text-gray-400 hover:text-brand transition p-2">
-                        <i class="fa-solid fa-volume-high text-2xl"></i>
-                    </button>
-                </div>
-                
-                <p class="text-gray-300 italic text-lg mb-4">verb</p>
-                <div class="mb-8">
-                    <span class="inline-block bg-brand-light text-brand-dark text-[11px] px-4 py-1 rounded font-bold uppercase tracking-widest">Advanced Level</span>
-                </div>
-
-                <div class="space-y-8">
-                    <section>
-                        <h4 class="font-bold text-gray-800 mb-2">Definition</h4>
-                        <p class="text-gray-600 leading-relaxed text-lg">
-                            (of something perceived as hostile, threatening, or negative) become less intense or widespread.
-                        </p>
-                    </section>
-
-                    <section class="border-l-4 border-brand-light pl-4 py-1">
-                        <h4 class="font-bold text-gray-800 mb-1">Example</h4>
-                        <p class="text-gray-500 italic text-lg">"The storm finally began to abate after hours of heavy rain."</p>
-                    </section>
-
-                    <div class="grid grid-cols-2 gap-8 pt-8 border-t border-gray-50">
-                        <div>
-                            <h4 class="font-bold text-gray-800 mb-2">Synonyms</h4>
-                            <p class="text-gray-500">subside, lessen, decrease, diminish</p>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 mb-2">Antonyms</h4>
-                            <p class="text-gray-500">intensify, increase, prolong</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="detailContent"></div>
         </div>
 
+        <section id="teacher-panel" class="mt-32 pt-16 border-t border-gray-100">
+            <div class="bg-gray-50 p-8 rounded-2xl border-2 border-dashed border-brand/20">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fa-solid fa-pen-nib mr-3 text-brand"></i> Teacher Panel
+                </h2>
+                <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">The Word</label>
+                        <input type="text" id="f-word" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Level</label>
+                        <select id="f-level" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand">
+                            <option>Advanced</option>
+                            <option>Intermediate</option>
+                            <option>Beginner</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Definition</label>
+                        <textarea id="f-def" rows="2" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand" placeholder="Explain the meaning..."></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Example Sentence</label>
+                        <input type="text" id="f-ex" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand" placeholder="How to use it?">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Synonyms</label>
+                        <input type="text" id="f-syn" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand" placeholder="Comma separated">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Antonyms</label>
+                        <input type="text" id="f-ant" class="w-full bg-white border border-gray-200 rounded-lg p-3 outline-none focus:border-brand" placeholder="Comma separated">
+                    </div>
+                    <button type="submit" class="md:col-span-2 bg-brand text-white font-bold py-4 rounded-xl shadow-lg hover:bg-brand-dark transition transform active:scale-[0.98]">
+                        Publish Word
+                    </button>
+                </form>
+            </div>
+        </section>
     </main>
 
     <script>
-        function showDetail() {
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE С ТВОИМИ КЛЮЧАМИ
+        const SUPABASE_URL = 'https://rtvvilwwlgguzfncqatb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_44KE_hMHou4L53IykmUCvQ_cPahzba1';
+        const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let wordsData = [];
+
+        async function loadWords() {
+            const { data, error } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
+            if (error) console.error(error);
+            if (data) {
+                wordsData = data;
+                renderWords(data);
+            }
+        }
+
+        function renderWords(list) {
+            const grid = document.getElementById('wordsGrid');
+            if (list.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-10 text-center text-gray-400">В базе пока нет слов. Добавь первое через панель внизу!</div>';
+                return;
+            }
+            grid.innerHTML = list.map(w => `
+                <div class="word-card bg-white p-7 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between min-h-[240px] cursor-pointer" onclick="showDetail('${w.id}')">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-2xl font-bold text-gray-800">${w.word}</h3>
+                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-brand opacity-60 hover:opacity-100 transition">
+                                <i class="fa-solid fa-volume-high text-lg"></i>
+                            </button>
+                        </div>
+                        <p class="text-gray-500 text-sm leading-relaxed line-clamp-3">${w.definition || ''}</p>
+                    </div>
+                    <div class="mt-6">
+                        <span class="inline-block bg-brand-light text-brand-dark text-[10px] px-3 py-1 rounded font-bold uppercase tracking-wider">${w.level}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showDetail(id) {
+            const w = wordsData.find(item => item.id === id);
+            document.getElementById('detailContent').innerHTML = `
+                <div class="bg-white p-10 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-5xl font-bold text-brand">${w.word}</h2>
+                        <button onclick="speak('${w.word}')" class="text-gray-300 hover:text-brand transition"><i class="fa-solid fa-volume-high text-3xl"></i></button>
+                    </div>
+                    <div class="mb-8"><span class="bg-brand-light text-brand-dark text-[11px] px-4 py-1.5 rounded-full font-bold uppercase tracking-widest">${w.level}</span></div>
+                    <div class="space-y-8">
+                        <section><h4 class="font-bold text-gray-800 mb-2">Definition</h4><p class="text-gray-600 text-lg">${w.definition || '-'}</p></section>
+                        <section class="border-l-4 border-brand-light pl-4"><h4 class="font-bold text-gray-800 mb-1">Example</h4><p class="text-gray-500 italic text-lg">"${w.example || '-'}"</p></section>
+                    </div>
+                </div>
+            `;
             document.getElementById('listView').classList.add('hidden');
             document.getElementById('detailView').classList.remove('hidden');
             window.scrollTo(0, 0);
         }
+
         function hideDetail() {
             document.getElementById('detailView').classList.add('hidden');
             document.getElementById('listView').classList.remove('hidden');
         }
+
+        document.getElementById('addWordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                word: document.getElementById('f-word').value,
+                level: document.getElementById('f-level').value,
+                definition: document.getElementById('f-def').value,
+                example: document.getElementById('f-ex').value,
+                synonyms: document.getElementById('f-syn').value,
+                antonyms: document.getElementById('f-ant').value
+            };
+            const { error } = await _client.from('vocabulary').insert([payload]);
+            if (error) alert('Error: ' + error.message);
+            else {
+                alert('Слово добавлено!');
+                document.getElementById('addWordForm').reset();
+                loadWords();
+            }
+        });
+
+        loadWords();
     </script>
 </body>
 </html>
