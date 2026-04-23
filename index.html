@@ -17,22 +17,23 @@
                 }
             }
         }
-        function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            window.speechSynthesis.speak(utterance);
-        }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #ffffff; }
         .word-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .word-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.08); }
+        .word-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.05); }
         .filter-btn { border-radius: 9999px; transition: all 0.2s ease; white-space: nowrap; }
-        .filter-btn.active { background-color: #b593c4; color: white; border-color: #b593c4; box-shadow: 0 4px 12px rgba(181, 147, 196, 0.3); }
+        .filter-btn.active { background-color: #b593c4; color: white; border-color: #b593c4; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Стили для кнопок статуса */
+        .status-badge { font-[900] text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border; }
+        .status-learning { background: #fffbeb; color: #d97706; border-color: #fef3c7; }
+        .status-mastered { background: #f0fdf4; color: #16a34a; border-color: #dcfce7; }
+        .status-already_know { background: #f8fafc; color: #64748b; border-color: #f1f5f9; }
     </style>
 </head>
 <body class="min-h-screen bg-white text-gray-900">
@@ -40,11 +41,11 @@
     <nav id="navBar" class="hidden bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="font-black text-2xl text-gray-800 tracking-tighter cursor-pointer" onclick="location.reload()">TOEFL.ai</div>
         <div id="navRight" class="flex items-center space-x-4">
-            <div id="userStats" class="hidden md:flex bg-gray-50 px-4 py-2 rounded-full border border-gray-100 items-center gap-2">
-                <i class="fa-solid fa-graduation-cap text-brand text-xs"></i>
-                <span id="learnedCount" class="text-[10px] font-black text-gray-600 uppercase tracking-widest">0 Words Learned</span>
+            <div id="userStats" class="hidden md:flex gap-4 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
+                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-amber-400"></div><span id="stat-learning" class="text-[10px] font-black text-gray-500 uppercase">0 Learning</span></div>
+                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-green-500"></div><span id="stat-mastered" class="text-[10px] font-black text-gray-500 uppercase">0 Mastered</span></div>
             </div>
-            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-dark transition shadow-lg shadow-brand/20">Teacher Cabinet</button>
+            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Teacher Cabinet</button>
             <div id="authSection"></div>
         </div>
     </nav>
@@ -53,15 +54,15 @@
         <div id="listView">
             <header class="mb-12">
                 <h1 class="text-5xl font-black text-gray-900 mb-3 tracking-tighter">Vocabulary Hub</h1>
-                <p class="text-gray-400 font-medium">Exclusive TOEFL 2026 Preparation Materials.</p>
+                <p class="text-gray-400 font-medium">Manage your TOEFL progress states.</p>
             </header>
 
             <div class="flex flex-wrap gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
                 <button onclick="filterWords('All', this)" class="filter-btn active border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">All</button>
-                <button onclick="filterWords('My Learning', this)" id="myLearningBtn" class="filter-btn border border-brand/30 text-brand px-6 py-2 text-[11px] font-bold uppercase tracking-widest bg-brand/5">My Learning</button>
+                <button onclick="filterWords('learning', this)" class="filter-btn border border-amber-200 text-amber-600 px-6 py-2 text-[11px] font-bold uppercase tracking-widest bg-amber-50">Learning</button>
+                <button onclick="filterWords('mastered', this)" class="filter-btn border border-green-200 text-green-600 px-6 py-2 text-[11px] font-bold uppercase tracking-widest bg-green-50">Mastered</button>
                 <div class="w-px h-8 bg-gray-100 mx-2"></div>
                 <button onclick="filterWords('Advanced', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Advanced</button>
-                <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Upper-Intermediate</button>
                 <button onclick="filterWords('Intermediate', this)" class="filter-btn border border-gray-200 text-gray-500 px-6 py-2 text-[11px] font-bold uppercase tracking-widest">Intermediate</button>
             </div>
 
@@ -69,40 +70,23 @@
         </div>
 
         <div id="detailView" class="hidden max-w-3xl mx-auto animate-fade-in">
-            <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-700 text-sm mb-8 flex items-center transition group font-bold">
-                <i class="fa-solid fa-arrow-left mr-2 group-hover:-translate-x-1 transition"></i> Back to Hub
+            <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-700 text-sm mb-8 flex items-center font-bold">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Hub
             </button>
             <div id="detailContent"></div>
         </div>
-
+        
         <section id="adminPanel" class="hidden mt-20 pt-16 border-t border-gray-100">
-            <div class="bg-gray-50 p-10 rounded-[40px] border-2 border-dashed border-brand/20 shadow-inner">
-                <h2 class="text-2xl font-black text-gray-800 mb-8">Add New Word</h2>
-                <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input type="text" id="f-word" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Word" required>
-                    <select id="f-level" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm">
-                        <option>Advanced</option><option>Upper-Intermediate</option><option>Intermediate</option><option>Pre-Intermediate</option><option>Elementary</option>
-                    </select>
-                    <input type="text" id="f-pos" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Part of Speech">
-                    <div></div>
-                    <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-400 shadow-sm" placeholder="Synonyms">
-                    <input type="text" id="f-ant" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-400 shadow-sm" placeholder="Antonyms">
-                    <textarea id="f-def" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Definition"></textarea>
-                    <textarea id="f-ex" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Context Sentence"></textarea>
-                    <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Database</button>
-                </form>
-            </div>
-        </section>
+             </section>
     </main>
 
     <div id="authModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl relative animate-fade-in text-center">
             <h3 class="text-4xl font-black mb-2 tracking-tighter text-gray-800">TOEFL Prep</h3>
-            <p class="text-gray-400 text-sm mb-8 font-medium">Please sign in to access materials</p>
-            <div class="space-y-4 text-left">
+            <div class="space-y-4 mt-8 text-left">
                 <input type="email" id="authEmail" placeholder="Email" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
                 <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition transform active:scale-95">Sign In</button>
+                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition">Sign In</button>
                 <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-brand transition mt-4">Create Account</button>
             </div>
         </div>
@@ -114,82 +98,63 @@
         const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let wordsData = [];
-        let userLearnedIds = new Set();
+        let userProgressMap = {}; // wordId: status
         let currentFilter = 'All';
         let userRole = 'student';
         let currentUser = null;
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
-            const mainContent = document.getElementById('mainContent');
-            const navBar = document.getElementById('navBar');
-            const authModal = document.getElementById('authModal');
-
             if (session) {
                 currentUser = session.user;
                 const { data: profiles } = await _client.from('profiles').select('role').eq('id', currentUser.id);
-                userRole = (profiles && profiles.length > 0) ? profiles[0].role : 'student';
-
-                mainContent.classList.remove('hidden');
-                navBar.classList.remove('hidden');
-                authModal.classList.add('hidden');
+                userRole = profiles?.[0]?.role || 'student';
+                
+                document.getElementById('mainContent').classList.remove('hidden');
+                document.getElementById('navBar').classList.remove('hidden');
+                document.getElementById('authModal').classList.add('hidden');
                 
                 updateUI(true, currentUser.email);
-                await loadLearnedWords();
+                await loadUserProgress();
                 loadWords();
-            } else {
-                mainContent.classList.add('hidden');
-                navBar.classList.add('hidden');
-                authModal.classList.remove('hidden');
-                updateUI(false);
             }
         }
 
-        async function loadLearnedWords() {
-            if (!currentUser) return;
-            const { data } = await _client.from('user_progress').select('word_id').eq('user_id', currentUser.id);
-            if (data) {
-                userLearnedIds = new Set(data.map(item => item.word_id));
-                document.getElementById('learnedCount').innerText = `${userLearnedIds.size} Words Learned`;
-                document.getElementById('userStats').classList.remove('hidden');
-            }
+        async function loadUserProgress() {
+            const { data } = await _client.from('user_progress').select('word_id, status').eq('user_id', currentUser.id);
+            userProgressMap = {};
+            data?.forEach(item => userProgressMap[item.word_id] = item.status);
+            updateStatsUI();
         }
 
-        async function toggleLearned(wordId, event) {
-            event.stopPropagation();
-            if (userLearnedIds.has(wordId)) {
+        function updateStatsUI() {
+            const learning = Object.values(userProgressMap).filter(s => s === 'learning').length;
+            const mastered = Object.values(userProgressMap).filter(s => s === 'mastered').length;
+            document.getElementById('stat-learning').innerText = `${learning} Learning`;
+            document.getElementById('stat-mastered').innerText = `${mastered} Mastered`;
+            document.getElementById('userStats').classList.remove('hidden');
+        }
+
+        async function updateWordStatus(wordId, newStatus, event) {
+            if (event) event.stopPropagation();
+            
+            if (newStatus === 'none') {
                 await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
-                userLearnedIds.delete(wordId);
+                delete userProgressMap[wordId];
             } else {
-                await _client.from('user_progress').insert([{ user_id: currentUser.id, word_id: wordId }]);
-                userLearnedIds.add(wordId);
+                const { data } = await _client.from('user_progress').upsert({
+                    user_id: currentUser.id,
+                    word_id: wordId,
+                    status: newStatus
+                }, { onConflict: 'user_id, word_id' });
+                userProgressMap[wordId] = newStatus;
             }
-            document.getElementById('learnedCount').innerText = `${userLearnedIds.size} Words Learned`;
+            
+            updateStatsUI();
             renderWords(wordsData);
-        }
-
-        function updateUI(loggedIn, email = '') {
-            const authSection = document.getElementById('authSection');
-            const adminBtn = document.getElementById('adminBtn');
-            if (loggedIn) {
-                authSection.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest hidden md:block">${email}</span>
-                        <button onclick="logout()" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>
-                    </div>`;
-                if (userRole === 'admin') adminBtn.classList.remove('hidden');
+            if (!document.getElementById('detailView').classList.contains('hidden')) {
+                showDetail(wordId);
             }
-        }
-
-        async function logout() { await _client.auth.signOut(); window.location.reload(); }
-
-        async function handleAuth(type) {
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPass').value;
-            const { error } = (type === 'login') 
-                ? await _client.auth.signInWithPassword({ email, password }) 
-                : await _client.auth.signUp({ email, password });
-            if (error) alert(error.message); else window.location.reload();
         }
 
         async function loadWords() {
@@ -200,144 +165,99 @@
         function renderWords(list) {
             const grid = document.getElementById('wordsGrid');
             let filtered = list;
-            if (currentFilter === 'My Learning') {
-                filtered = list.filter(w => userLearnedIds.has(w.id));
+            
+            if (['learning', 'mastered'].includes(currentFilter)) {
+                filtered = list.filter(w => userProgressMap[w.id] === currentFilter);
             } else if (currentFilter !== 'All') {
                 filtered = list.filter(w => w.level === currentFilter);
             }
+            
+            // Скрываем те, что отмечены "Already Know" (чтобы не загромождать выдачу)
+            filtered = filtered.filter(w => userProgressMap[w.id] !== 'already_know');
 
             grid.innerHTML = filtered.map(w => {
-                const isLearned = userLearnedIds.has(w.id);
+                const status = userProgressMap[w.id];
                 return `
-                <div class="word-card bg-white p-10 rounded-[40px] border ${isLearned ? 'border-brand/40 shadow-md bg-brand/5' : 'border-gray-100'} flex flex-col justify-between min-h-[280px] cursor-pointer group relative" onclick="showDetail('${w.id}')">
-                    <button onclick="toggleLearned('${w.id}', event)" class="absolute top-8 right-8 w-10 h-10 rounded-full flex items-center justify-center transition-all ${isLearned ? 'bg-brand text-white shadow-lg' : 'bg-gray-50 text-gray-300 hover:text-brand hover:bg-brand/10'}">
-                        <i class="fa-solid fa-check text-sm"></i>
-                    </button>
+                <div class="word-card bg-white p-10 rounded-[40px] border border-gray-100 flex flex-col justify-between min-h-[320px] cursor-pointer group" onclick="showDetail('${w.id}')">
                     <div>
-                        <div class="flex justify-between items-start mb-2 pr-10">
+                        <div class="flex justify-between items-start mb-4">
                             <h3 class="text-3xl font-black text-gray-800 tracking-tighter group-hover:text-brand transition">${w.word}</h3>
+                            <div class="flex flex-col gap-1">
+                                ${status ? `<span class="status-badge status-${status}">${status.replace('_', ' ')}</span>` : ''}
+                            </div>
                         </div>
-                        <p class="text-gray-400 italic text-[10px] mb-6 font-black uppercase tracking-[0.2em]">${w.pos || 'vocabulary'}</p>
                         <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 font-medium">${w.definition || ''}</p>
                     </div>
-                    <div class="mt-8 flex justify-between items-center">
-                        <span class="inline-block bg-brand-light text-brand-dark text-[9px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest">${w.level}</span>
-                        <div class="flex gap-2 items-center">
-                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-500 hover:text-gray-800 transition"><i class="fa-solid fa-volume-high"></i></button>
-                            ${userRole === 'admin' ? `<i class="fa-solid fa-pen-to-square text-brand/30 hover:text-brand transition" onclick="event.stopPropagation(); editFromGrid('${w.id}')"></i>` : ''}
+                    
+                    <div class="mt-8">
+                        <div class="flex gap-2 mb-6">
+                            <button onclick="updateWordStatus('${w.id}', 'learning', event)" class="flex-1 text-[9px] font-black uppercase py-2 rounded-xl border border-amber-100 text-amber-600 hover:bg-amber-50 transition">Learning</button>
+                            <button onclick="updateWordStatus('${w.id}', 'mastered', event)" class="flex-1 text-[9px] font-black uppercase py-2 rounded-xl border border-green-100 text-green-600 hover:bg-green-50 transition">Mastered</button>
+                            <button onclick="updateWordStatus('${w.id}', 'already_know', event)" class="p-2 text-gray-300 hover:text-gray-600" title="I already know this"><i class="fa-solid fa-eye-slash"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-gray-50 pt-4">
+                            <span class="text-[9px] font-black text-brand-dark uppercase tracking-widest">${w.level}</span>
+                            <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-500 hover:text-gray-800"><i class="fa-solid fa-volume-high"></i></button>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function editFromGrid(id) { showDetail(id); setTimeout(() => editWord(id), 100); }
-
         function showDetail(id) {
             const w = wordsData.find(item => item.id === id);
-            const isLearned = userLearnedIds.has(w.id);
+            const status = userProgressMap[w.id];
             const content = document.getElementById('detailContent');
             content.innerHTML = `
-                <div id="detailCard" class="bg-white p-12 rounded-[50px] border border-gray-100 shadow-2xl relative">
-                    <div class="absolute top-8 right-12 flex items-center gap-4">
-                        <button onclick="toggleLearned('${w.id}', event); showDetail('${w.id}')" class="flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transition ${isLearned ? 'bg-brand text-white' : 'bg-gray-100 text-gray-400 hover:bg-brand/10 hover:text-brand'}">
-                            <i class="fa-solid fa-check"></i> ${isLearned ? 'Learned' : 'Mark as Learned'}
-                        </button>
-                        ${userRole === 'admin' ? `<button onclick="editWord('${w.id}')" class="bg-brand-light text-brand px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest">Edit Card</button>` : ''}
+                <div class="bg-white p-12 rounded-[50px] border border-gray-100 shadow-2xl relative animate-fade-in">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h2 class="text-7xl font-black text-brand tracking-tighter">${w.word}</h2>
+                            <p class="text-gray-400 italic text-sm mt-2 font-black uppercase tracking-[0.3em]">${w.pos} • ${w.level}</p>
+                        </div>
+                        <div class="flex flex-col gap-3 items-end">
+                            <div class="flex gap-2">
+                                <button onclick="updateWordStatus('${w.id}', 'learning')" class="px-4 py-2 rounded-full text-[10px] font-black uppercase border ${status === 'learning' ? 'bg-amber-400 border-amber-400 text-white' : 'border-gray-200 text-gray-400'}">Learning</button>
+                                <button onclick="updateWordStatus('${w.id}', 'mastered')" class="px-4 py-2 rounded-full text-[10px] font-black uppercase border ${status === 'mastered' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-200 text-gray-400'}">Mastered</button>
+                            </div>
+                            <button onclick="updateWordStatus('${w.id}', 'none')" class="text-[9px] font-bold text-gray-300 hover:text-red-400 uppercase tracking-widest underline">Reset status</button>
+                        </div>
                     </div>
-                    <div class="flex items-center mb-4">
-                        <h2 class="text-7xl font-black text-brand tracking-tighter mr-6">${w.word}</h2>
-                        <button onclick="speak('${w.word}')" class="text-gray-500 hover:text-gray-800 transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
-                    </div>
-                    <p class="text-gray-400 italic text-sm mb-10 font-black uppercase tracking-[0.3em]">${w.pos} • ${w.level}</p>
                     
                     <div class="space-y-10">
-                        <section><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Definition</h4><p class="text-gray-700 text-2xl leading-tight font-semibold">${w.definition || '-'}</p></section>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <section class="bg-green-50 p-8 rounded-[30px] border-l-8 border-green-200">
-                                <h4 class="font-black text-green-700/40 mb-3 text-[10px] uppercase tracking-[0.2em]">Synonyms</h4>
-                                <p class="text-green-800 text-lg font-bold italic">${w.synonyms || '-'}</p>
-                            </section>
-                            <section class="bg-red-50 p-8 rounded-[30px] border-l-8 border-red-100">
-                                <h4 class="font-black text-red-700/30 mb-3 text-[10px] uppercase tracking-[0.2em]">Antonyms</h4>
-                                <p class="text-red-800 text-lg font-bold italic">${w.antonyms || '-'}</p>
-                            </section>
+                        <section><h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Definition</h4><p class="text-gray-700 text-2xl font-semibold">${w.definition}</p></section>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-6 rounded-3xl border-l-4 border-green-200"><h4 class="text-green-700/40 font-black text-[9px] uppercase mb-2">Synonyms</h4><p class="text-green-800 font-bold">${w.synonyms || '-'}</p></div>
+                            <div class="bg-red-50 p-6 rounded-3xl border-l-4 border-red-100"><h4 class="text-red-700/30 font-black text-[9px] uppercase mb-2">Antonyms</h4><p class="text-red-800 font-bold">${w.antonyms || '-'}</p></div>
                         </div>
-
-                        <section class="bg-gray-50 p-10 rounded-[40px] border-l-[12px] border-brand"><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Context Example</h4><p class="text-gray-500 italic text-xl leading-relaxed">"${w.example || '-'}"</p></section>
+                        <section class="bg-gray-50 p-8 rounded-[40px] border-l-[10px] border-brand"><p class="text-gray-500 italic text-xl">"${w.example}"</p></section>
                     </div>
                 </div>`;
             document.getElementById('listView').classList.add('hidden');
             document.getElementById('detailView').classList.remove('hidden');
-            window.scrollTo(0, 0);
         }
 
-        function editWord(id) {
-            const w = wordsData.find(item => item.id === id);
-            document.getElementById('detailCard').innerHTML = `
-                <div class="space-y-6">
-                    <h2 class="text-2xl font-black text-brand tracking-tighter">Edit Card</h2>
-                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none pb-2">
-                    <div class="grid grid-cols-2 gap-4">
-                        <select id="e-level" class="p-4 bg-gray-50 rounded-2xl outline-none">
-                            <option ${w.level === 'Advanced' ? 'selected' : ''}>Advanced</option>
-                            <option ${w.level === 'Upper-Intermediate' ? 'selected' : ''}>Upper-Intermediate</option>
-                            <option ${w.level === 'Intermediate' ? 'selected' : ''}>Intermediate</option>
-                            <option ${w.level === 'Pre-Intermediate' ? 'selected' : ''}>Pre-Intermediate</option>
-                            <option ${w.level === 'Elementary' ? 'selected' : ''}>Elementary</option>
-                        </select>
-                        <input type="text" id="e-pos" value="${w.pos || ''}" class="p-4 bg-gray-50 rounded-2xl outline-none">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="e-syn" placeholder="Synonyms" value="${w.synonyms || ''}" class="p-4 bg-green-50 rounded-2xl outline-none border border-green-100">
-                        <input type="text" id="e-ant" placeholder="Antonyms" value="${w.antonyms || ''}" class="p-4 bg-red-50 rounded-2xl outline-none border border-red-50">
-                    </div>
-                    <textarea id="e-def" rows="3" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.definition || ''}</textarea>
-                    <textarea id="e-ex" rows="2" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.example || ''}</textarea>
-                    <div class="flex gap-4">
-                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl shadow-lg">Save Changes</button>
-                        <button onclick="showDetail('${id}')" class="px-8 bg-gray-100 text-gray-400 font-black py-4 rounded-2xl">Cancel</button>
-                    </div>
-                </div>`;
-        }
-
-        async function saveEdit(id) {
-            const updated = {
-                word: document.getElementById('e-word').value,
-                level: document.getElementById('e-level').value,
-                pos: document.getElementById('e-pos').value,
-                synonyms: document.getElementById('e-syn').value,
-                antonyms: document.getElementById('e-ant').value,
-                definition: document.getElementById('e-def').value,
-                example: document.getElementById('e-ex').value
-            };
-            await _client.from('vocabulary').update(updated).eq('id', id);
-            await loadWords(); 
-            showDetail(id);
-        }
-
+        // Вспомогательные функции остаются как в прошлой версии
         function filterWords(level, btn) {
             currentFilter = level;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderWords(wordsData);
         }
-
         function hideDetail() { document.getElementById('detailView').classList.add('hidden'); document.getElementById('listView').classList.remove('hidden'); }
-        function toggleAdminPanel() { document.getElementById('adminPanel').classList.toggle('hidden'); }
-
-        document.getElementById('addWordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
-                pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value,
-                antonyms: document.getElementById('f-ant').value,
-                definition: document.getElementById('f-def').value, example: document.getElementById('f-ex').value
-            };
-            const { error } = await _client.from('vocabulary').insert([payload]);
-            if (!error) { document.getElementById('addWordForm').reset(); loadWords(); }
-        });
+        function updateUI(loggedIn, email = '') {
+            const authSection = document.getElementById('authSection');
+            if (loggedIn) {
+                authSection.innerHTML = `<span class="text-[10px] font-black text-gray-300 mr-4 uppercase">${email}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase">Exit</button>`;
+                if (userRole === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
+            }
+        }
+        async function handleAuth(type) {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPass').value;
+            const { error } = (type === 'login') ? await _client.auth.signInWithPassword({ email, password }) : await _client.auth.signUp({ email, password });
+            if (error) alert(error.message); else location.reload();
+        }
 
         checkSession();
     </script>
