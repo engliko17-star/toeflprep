@@ -17,6 +17,25 @@
                 }
             }
         }
+
+        // Улучшенная озвучка: произносит все три формы по очереди
+        function speakVerbForms(v1, v2, v3) {
+            window.speechSynthesis.cancel(); // Остановить текущую озвучку, если есть
+            
+            const forms = [v1, v2, v3];
+            let delay = 0;
+
+            forms.forEach((text, index) => {
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.9; // Чуть медленнее для четкости
+                    window.speechSynthesis.speak(utterance);
+                }, delay);
+                delay += 1000; // Пауза 1 секунда между формами
+            });
+        }
+
         function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
@@ -28,7 +47,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #fcfcfc; }
         .word-card { transition: all 0.3s ease; border: 0.5px solid rgba(181, 147, 196, 0.3); background: white; }
         .word-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -15px rgba(181, 147, 196, 0.15); border-color: rgba(181, 147, 196, 0.6); }
-        .nav-link { position: relative; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; transition: all 0.3s; }
+        .nav-link { position: relative; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; transition: all 0.3s; cursor: pointer; }
         .nav-link.active { color: #1e293b; }
         .nav-link.active::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px; background: #b593c4; border-radius: 2px; }
         .filter-btn { border-radius: 9999px; transition: all 0.2s ease; white-space: nowrap; border: 1px solid #e2e8f0; color: #64748b; padding: 8px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
@@ -39,17 +58,22 @@
         .side-card { border-radius: 20px; padding: 20px; border: 1px solid #f1f5f9; }
         .loading-spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid #fff; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .verb-row { border-bottom: 1px solid #f8fafc; transition: background 0.2s; }
+        .verb-row:hover { background-color: #f8fafc; }
+        .search-input:focus { box-shadow: 0 10px 30px -10px rgba(181, 147, 196, 0.2); }
     </style>
 </head>
 <body class="min-h-screen">
 
     <nav id="navBar" class="hidden bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 py-5 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-12">
-            <div class="font-black text-2xl text-gray-900 tracking-tighter cursor-pointer" onclick="location.reload()">TOEFL.ai</div>
+            <div class="font-black text-2xl text-gray-900 tracking-tighter cursor-pointer" onclick="showSection('vocabulary')">TOEFL.ai</div>
             <div class="hidden md:flex gap-8">
-                <a href="#" class="nav-link active">Vocabulary</a>
-                <a href="#" class="nav-link opacity-40 cursor-not-allowed">Reading</a>
-                <a href="#" class="nav-link opacity-40 cursor-not-allowed">Listening</a>
+                <a id="nav-voc" onclick="showSection('vocabulary')" class="nav-link active">Vocabulary</a>
+                <a id="nav-verbs" onclick="showSection('verbs')" class="nav-link">Irregular Verbs</a>
+                <a class="nav-link opacity-40 cursor-not-allowed">Reading</a>
+                <a class="nav-link opacity-40 cursor-not-allowed">Listening</a>
             </div>
         </div>
         <div class="flex items-center gap-6">
@@ -60,52 +84,85 @@
 
     <main id="mainContent" class="hidden max-w-7xl mx-auto px-8 py-12">
         
-        <section id="myProgressSection" class="bg-gray-50/50 -mx-8 px-8 py-16 rounded-[60px] mb-16">
-            <div id="myWordsBack" class="hidden mb-8">
-                <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
-                    <i class="fa-solid fa-arrow-left"></i> Назад
-                </button>
-            </div>
-            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
-                        <i class="fa-solid fa-bookmark text-xl"></i>
+        <div id="vocabularyView">
+            <section id="myProgressSection" class="bg-gray-50/50 -mx-8 px-8 py-16 rounded-[60px] mb-16">
+                <div id="myWordsBack" class="hidden mb-8">
+                    <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
+                        <i class="fa-solid fa-arrow-left"></i> Назад
+                    </button>
+                </div>
+                <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
+                            <i class="fa-solid fa-bookmark text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-black text-gray-900 tracking-tighter">My Words</h2>
+                        </div>
                     </div>
+                    <div class="flex bg-white p-1.5 rounded-full border border-gray-100 shadow-sm">
+                        <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-brand hover:text-brand active-filter-btn">In Progress</button>
+                        <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">Mastered</button>
+                    </div>
+                </div>
+                <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </section>
+
+            <div id="mainDivider" class="section-divider"></div>
+
+            <section id="librarySection">
+                <div id="libBack" class="hidden mb-8">
+                    <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
+                        <i class="fa-solid fa-arrow-left"></i> Назад
+                    </button>
+                </div>
+                <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
                     <div>
-                        <h2 class="text-3xl font-black text-gray-900 tracking-tighter">My Words</h2>
+                        <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2>
+                        <p class="text-gray-400 text-sm font-medium">Explore the complete 2026 database</p>
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        <button onclick="filterWords('All', this)" class="filter-btn active">All Levels</button>
+                        <button onclick="filterWords('Advanced', this)" class="filter-btn">Advanced</button>
+                        <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn">Upper-Intermediate</button>
+                        <button onclick="filterWords('Intermediate', this)" class="filter-btn">Intermediate</button>
+                        <button onclick="filterWords('Elementary', this)" class="filter-btn">Elementary</button>
                     </div>
                 </div>
-                <div class="flex bg-white p-1.5 rounded-full border border-gray-100 shadow-sm">
-                    <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-brand hover:text-brand active-filter-btn">In Progress</button>
-                    <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">Mastered</button>
-                </div>
-            </div>
-            <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-        </section>
+                <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </section>
+        </div>
 
-        <div id="mainDivider" class="section-divider"></div>
+        <div id="verbsView" class="hidden">
+            <section id="verbsSection">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8">
+                    <div>
+                        <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Three Verb Forms</h2>
+                        <p class="text-gray-400 text-sm font-medium">100 Most Common Irregular Verbs</p>
+                    </div>
+                    <div class="relative w-full md:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                        <input type="text" id="verbSearch" oninput="filterVerbsTable()" placeholder="Search verb or translation..." 
+                            class="search-input w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium outline-none transition-all focus:border-brand">
+                    </div>
+                </div>
 
-        <section id="librarySection">
-            <div id="libBack" class="hidden mb-8">
-                <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
-                    <i class="fa-solid fa-arrow-left"></i> Назад
-                </button>
-            </div>
-            <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-                <div>
-                    <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2>
-                    <p class="text-gray-400 text-sm font-medium">Explore the complete 2026 database</p>
+                <div class="overflow-hidden bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-50/50 border-b border-gray-50">
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Infinitive (V1)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Past Simple (V2)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Past Participle (V3)</th>
+                                <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Translation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verbsTableBody">
+                            </tbody>
+                    </table>
                 </div>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                    <button onclick="filterWords('All', this)" class="filter-btn active">All Levels</button>
-                    <button onclick="filterWords('Advanced', this)" class="filter-btn">Advanced</button>
-                    <button onclick="filterWords('Upper-Intermediate', this)" class="filter-btn">Upper-Intermediate</button>
-                    <button onclick="filterWords('Intermediate', this)" class="filter-btn">Intermediate</button>
-                    <button onclick="filterWords('Elementary', this)" class="filter-btn">Elementary</button>
-                </div>
-            </div>
-            <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-        </section>
+            </section>
+        </div>
 
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
             <header class="flex justify-between items-center px-8 py-6 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur-md z-10">
@@ -182,7 +239,163 @@
         let userRole = 'student';
         let currentUser = null;
         let currentDetailId = null;
-        let activeView = 'home'; // 'home', 'my-all', 'lib-all'
+        let activeView = 'home';
+
+        // Irregular Verbs Data
+        const irregularVerbs = [
+            { v1: "be", v2: "was/were", v3: "been", tr: "быть" },
+            { v1: "have", v2: "had", v3: "had", tr: "иметь" },
+            { v1: "say", v2: "said", v3: "said", tr: "сказать" },
+            { v1: "do", v2: "did", v3: "done", tr: "делать" },
+            { v1: "know", v2: "knew", v3: "known", tr: "знать" },
+            { v1: "get", v2: "got", v3: "gotten", tr: "получать" },
+            { v1: "come", v2: "came", v3: "come", tr: "приходить" },
+            { v1: "go", v2: "went", v3: "gone", tr: "идти" },
+            { v1: "see", v2: "saw", v3: "seen", tr: "видеть" },
+            { v1: "take", v2: "took", v3: "taken", tr: "брать" },
+            { v1: "think", v2: "thought", v3: "thought", tr: "думать" },
+            { v1: "make", v2: "made", v3: "made", tr: "создавать" },
+            { v1: "tell", v2: "told", v3: "told", tr: "рассказывать" },
+            { v1: "put", v2: "put", v3: "put", tr: "класть" },
+            { v1: "find", v2: "found", v3: "found", tr: "находить" },
+            { v1: "read", v2: "read", v3: "read", tr: "читать" },
+            { v1: "give", v2: "gave", v3: "given", tr: "давать" },
+            { v1: "feel", v2: "felt", v3: "felt", tr: "чувствовать" },
+            { v1: "hear", v2: "heard", v3: "heard", tr: "слышать" },
+            { v1: "leave", v2: "left", v3: "left", tr: "оставлять" },
+            { v1: "keep", v2: "kept", v3: "kept", tr: "хранить" },
+            { v1: "sit", v2: "sat", v3: "sat", tr: "сидеть" },
+            { v1: "mean", v2: "meant", v3: "meant", tr: "значить" },
+            { v1: "run", v2: "ran", v3: "run", tr: "бежать" },
+            { v1: "let", v2: "let", v3: "let", tr: "позволять" },
+            { v1: "set", v2: "set", v3: "set", tr: "устанавливать" },
+            { v1: "begin", v2: "began", v3: "begun", tr: "начинать" },
+            { v1: "stand", v2: "stood", v3: "stood", tr: "стоять" },
+            { v1: "hold", v2: "held", v3: "held", tr: "держать" },
+            { v1: "bring", v2: "brought", v3: "brought", tr: "приносить" },
+            { v1: "speak", v2: "spoke", v3: "spoken", tr: "говорить" },
+            { v1: "light", v2: "lit", v3: "lit", tr: "светить" },
+            { v1: "meet", v2: "met", v3: "met", tr: "встречать" },
+            { v1: "hurt", v2: "hurt", v3: "hurt", tr: "ранить" },
+            { v1: "hit", v2: "hit", v3: "hit", tr: "ударять" },
+            { v1: "cost", v2: "cost", v3: "cost", tr: "стоить" },
+            { v1: "write", v2: "wrote", v3: "written", tr: "писать" },
+            { v1: "eat", v2: "ate", v3: "eaten", tr: "есть" },
+            { v1: "buy", v2: "bought", v3: "bought", tr: "покупать" },
+            { v1: "cut", v2: "cut", v3: "cut", tr: "резать" },
+            { v1: "lose", v2: "lost", v3: "lost", tr: "терять" },
+            { v1: "show", v2: "showed", v3: "shown", tr: "показывать" },
+            { v1: "drive", v2: "drove", v3: "driven", tr: "водить" },
+            { v1: "shut", v2: "shut", v3: "shut", tr: "закрывать" },
+            { v1: "catch", v2: "caught", v3: "caught", tr: "ловить" },
+            { v1: "break", v2: "broke", v3: "broken", tr: "ломать" },
+            { v1: "send", v2: "sent", v3: "sent", tr: "отправлять" },
+            { v1: "fall", v2: "fell", v3: "fallen", tr: "падать" },
+            { v1: "hang", v2: "hung", v3: "hung", tr: "висеть" },
+            { v1: "spend", v2: "spent", v3: "spent", tr: "тратить" },
+            { v1: "pay", v2: "paid", v3: "paid", tr: "платить" },
+            { v1: "lie", v2: "lay", v3: "lain", tr: "лежать" },
+            { v1: "drink", v2: "drank", v3: "drunk", tr: "пить" },
+            { v1: "wear", v2: "wore", v3: "worn", tr: "носить" },
+            { v1: "lay", v2: "laid", v3: "laid", tr: "класть" },
+            { v1: "bite", v2: "bit", v3: "bitten", tr: "кусать" },
+            { v1: "rise", v2: "rose", v3: "risen", tr: "подниматься" },
+            { v1: "sleep", v2: "slept", v3: "slept", tr: "спать" },
+            { v1: "draw", v2: "drew", v3: "drawn", tr: "рисовать" },
+            { v1: "lead", v2: "led", v3: "led", tr: "вести" },
+            { v1: "grow", v2: "grew", v3: "grown", tr: "расти" },
+            { v1: "ring", v2: "rang", v3: "rung", tr: "звонить" },
+            { v1: "hide", v2: "hid", v3: "hidden", tr: "прятать" },
+            { v1: "throw", v2: "threw", v3: "thrown", tr: "бросать" },
+            { v1: "deal", v2: "dealt", v3: "dealt", tr: "иметь дело" },
+            { v1: "beat", v2: "beat", v3: "beaten", tr: "бить" },
+            { v1: "teach", v2: "taught", v3: "taught", tr: "учить" },
+            { v1: "fit", v2: "fit", v3: "fit", tr: "подходить" },
+            { v1: "wet", v2: "wet", v3: "wet", tr: "мочить" },
+            { v1: "bet", v2: "bet", v3: "bet", tr: "спорить" },
+            { v1: "stick", v2: "stuck", v3: "stuck", tr: "приклеивать" },
+            { v1: "spread", v2: "spread", v3: "spread", tr: "распространять" },
+            { v1: "choose", v2: "chose", v3: "chosen", tr: "выбирать" },
+            { v1: "fly", v2: "flew", v3: "flown", tr: "летать" },
+            { v1: "prove", v2: "proved", v3: "proven", tr: "доказывать" },
+            { v1: "blow", v2: "blew", v3: "blown", tr: "дуть" },
+            { v1: "sell", v2: "sold", v3: "sold", tr: "продавать" },
+            { v1: "fight", v2: "fought", v3: "fought", tr: "бороться" },
+            { v1: "slide", v2: "slid", v3: "slid", tr: "скользить" },
+            { v1: "steal", v2: "stole", v3: "stolen", tr: "красть" },
+            { v1: "build", v2: "built", v3: "built", tr: "строить" },
+            { v1: "sweat", v2: "sweat", v3: "sweat", tr: "потеть" },
+            { v1: "sing", v2: "sang", v3: "sung", tr: "петь" },
+            { v1: "wake", v2: "woke", v3: "woken", tr: "просыпаться" },
+            { v1: "strike", v2: "struck", v3: "stricken", tr: "ударять" },
+            { v1: "burst", v2: "burst", v3: "burst", tr: "взрываться" },
+            { v1: "ride", v2: "rode", v3: "ridden", tr: "ездить" },
+            { v1: "split", v2: "split", v3: "split", tr: "разделять" },
+            { v1: "bear", v2: "bore", v3: "born", tr: "нести" },
+            { v1: "win", v2: "won", v3: "won", tr: "побеждать" },
+            { v1: "freeze", v2: "froze", v3: "frozen", tr: "замораживать" },
+            { v1: "speed", v2: "sped", v3: "sped", tr: "ускоряться" },
+            { v1: "dig", v2: "dug", v3: "dug", tr: "копать" },
+            { v1: "swing", v2: "swung", v3: "swung", tr: "качаться" },
+            { v1: "sink", v2: "sink", v3: "sunk", tr: "тонуть" },
+            { v1: "bend", v2: "bent", v3: "bent", tr: "гнуть" },
+            { v1: "swear", v2: "swore", v3: "sworn", tr: "клясться" },
+            { v1: "tear", v2: "tore", v3: "torn", tr: "рвать" },
+            { v1: "cast", v2: "cast", v3: "cast", tr: "бросать" },
+            { v1: "swim", v2: "swam", v3: "swum", tr: "плавать" }
+        ];
+
+        function showSection(section) {
+            const vocView = document.getElementById('vocabularyView');
+            const verbsView = document.getElementById('verbsView');
+            const navVoc = document.getElementById('nav-voc');
+            const navVerbs = document.getElementById('nav-verbs');
+
+            if (section === 'verbs') {
+                vocView.classList.add('hidden');
+                verbsView.classList.remove('hidden');
+                navVerbs.classList.add('active');
+                navVoc.classList.remove('active');
+                renderVerbs();
+            } else {
+                vocView.classList.remove('hidden');
+                verbsView.classList.add('hidden');
+                navVoc.classList.add('active');
+                navVerbs.classList.remove('active');
+                switchView('home');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function renderVerbs(data = irregularVerbs) {
+            const tbody = document.getElementById('verbsTableBody');
+            tbody.innerHTML = data.map(v => `
+                <tr class="verb-row group">
+                    <td class="p-8">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-gray-800 text-lg">${v.v1}</span> 
+                            <button onclick="speakVerbForms('${v.v1}', '${v.v2}', '${v.v3}')" class="w-8 h-8 rounded-full bg-brand/5 text-brand opacity-0 group-hover:opacity-100 transition-all hover:bg-brand hover:text-white flex items-center justify-center">
+                                <i class="fa-solid fa-volume-high text-[10px]"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="p-8 text-brand font-black text-lg">${v.v2}</td>
+                    <td class="p-8 text-brand font-black text-lg">${v.v3}</td>
+                    <td class="p-8 text-gray-400 text-right font-medium">${v.tr}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterVerbsTable() {
+            const q = document.getElementById('verbSearch').value.toLowerCase();
+            const filtered = irregularVerbs.filter(v => 
+                v.v1.toLowerCase().includes(q) || 
+                v.v2.toLowerCase().includes(q) || 
+                v.v3.toLowerCase().includes(q) || 
+                v.tr.toLowerCase().includes(q)
+            );
+            renderVerbs(filtered);
+        }
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
@@ -225,7 +438,6 @@
             const mySec = document.getElementById('myProgressSection');
             const divider = document.getElementById('mainDivider');
 
-            // View Management
             if (activeView === 'home') {
                 libSec.classList.remove('hidden');
                 mySec.classList.remove('hidden');
@@ -244,33 +456,21 @@
                 document.getElementById('libBack').classList.remove('hidden');
             }
 
-            // My Words Render
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
             let myLimit = activeView === 'my-all' ? myWords.length : 20;
             let myHtml = myWords.length > 0 ? myWords.slice(0, myLimit).map(w => createCardHtml(w)).join('') : `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
             
             if (activeView === 'home' && myWords.length > 20) {
-                myHtml += `
-                <div class="col-span-full flex justify-center mt-8">
-                    <button onclick="switchView('my-all')" class="bg-brand/10 hover:bg-brand/20 text-brand px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">
-                        View All My Words (${myWords.length})
-                    </button>
-                </div>`;
+                myHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('my-all')" class="bg-brand/10 hover:bg-brand/20 text-brand px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">View All My Words (${myWords.length})</button></div>`;
             }
             myGrid.innerHTML = myHtml;
 
-            // Library Render
             let filteredLib = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
             let libLimit = activeView === 'lib-all' ? filteredLib.length : 20;
             let libHtml = filteredLib.slice(0, libLimit).map(w => createCardHtml(w)).join('');
             
             if (activeView === 'home' && filteredLib.length > 20) {
-                libHtml += `
-                <div class="col-span-full flex justify-center mt-8">
-                    <button onclick="switchView('lib-all')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">
-                        View All Library (${filteredLib.length})
-                    </button>
-                </div>`;
+                libHtml += `<div class="col-span-full flex justify-center mt-8"><button onclick="switchView('lib-all')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">View All Library (${filteredLib.length})</button></div>`;
             }
             libGrid.innerHTML = libHtml;
         }
@@ -338,27 +538,13 @@
                         <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium leading-relaxed italic">"${w.example}"</p></div>
                     </div>
                     <div class="space-y-6">
-                        <div class="side-card bg-green-50/50 border-green-100">
-                            <h4 class="text-green-600/50 font-black text-[9px] uppercase tracking-widest mb-4">СИНОНИМЫ</h4>
-                            <p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p>
-                        </div>
-                        <div class="side-card bg-red-50/50 border-red-100">
-                            <h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">АНТОНИМЫ</h4>
-                            <p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p>
-                        </div>
+                        <div class="side-card bg-green-50/50 border-green-100"><h4 class="text-green-600/50 font-black text-[9px] uppercase tracking-widest mb-4">СИНОНИМЫ</h4><p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p></div>
+                        <div class="side-card bg-red-50/50 border-red-100"><h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">АНТОНИМЫ</h4><p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p></div>
                         <div class="side-card bg-purple-50/50 border-purple-100">
                             <h4 class="text-purple-600/50 font-black text-[9px] uppercase tracking-widest mb-4">ПРОГРЕСС</h4>
-                            <div class="flex items-baseline gap-2">
-                                <p class="text-purple-800 font-black text-4xl">${w.progress !== undefined && w.progress !== null ? w.progress : 0}%</p>
-                                <span class="text-purple-400 font-bold text-[10px] uppercase tracking-widest">ХОРОШАЯ РАБОТА!</span>
-                            </div>
+                            <div class="flex items-baseline gap-2"><p class="text-purple-800 font-black text-4xl">${w.progress || 0}%</p></div>
                         </div>
-                        <div class="side-card bg-yellow-50/50 border-yellow-100">
-                            <h4 class="text-yellow-600/50 font-black text-[9px] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="fa-solid fa-lightbulb text-yellow-500"></i> СОВЕТ
-                            </h4>
-                            <p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p>
-                        </div>
+                        <div class="side-card bg-yellow-50/50 border-yellow-100"><h4 class="text-yellow-600/50 font-black text-[9px] uppercase tracking-widest mb-4">СОВЕТ</h4><p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p></div>
                     </div>
                 </div>`;
             document.getElementById('detailView').classList.remove('hidden');
@@ -373,111 +559,38 @@
             document.getElementById('f-pos').value = w.pos;
             document.getElementById('f-syn').value = w.synonyms || '';
             document.getElementById('f-ant').value = w.antonyms || '';
-            document.getElementById('f-prog').value = w.progress !== undefined && w.progress !== null ? w.progress : '';
+            document.getElementById('f-prog').value = w.progress || '';
             document.getElementById('f-tip').value = w.tip || '';
             document.getElementById('f-def').value = w.definition;
             document.getElementById('f-ex').value = w.example;
-            document.getElementById('adminTitle').innerText = "Edit Word";
-            document.getElementById('btnText').innerText = "Save Changes";
-            document.getElementById('deleteBtn').classList.remove('hidden');
             hideDetail();
             document.getElementById('adminPanel').classList.remove('hidden');
-            window.scrollTo(0, document.body.scrollHeight);
         }
 
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('f-id').value;
-            const btn = document.getElementById('submitBtn');
-            const text = document.getElementById('btnText');
-
             const payload = {
                 word: document.getElementById('f-word').value, 
                 level: document.getElementById('f-level').value,
                 pos: document.getElementById('f-pos').value, 
                 synonyms: document.getElementById('f-syn').value,
                 antonyms: document.getElementById('f-ant').value,
-                progress: document.getElementById('f-prog').value ? parseInt(document.getElementById('f-prog').value) : 0,
+                progress: parseInt(document.getElementById('f-prog').value) || 0,
                 tip: document.getElementById('f-tip').value,
                 definition: document.getElementById('f-def').value, 
                 example: document.getElementById('f-ex').value
             };
-
-            btn.disabled = true;
-            text.innerText = "Syncing...";
-
-            try {
-                if (id && id.trim() !== "") {
-                    const { error } = await _client.from('vocabulary').update(payload).eq('id', id);
-                    if (error) throw error;
-                    const idx = wordsData.findIndex(w => w.id === id);
-                    if (idx !== -1) wordsData[idx] = { ...wordsData[idx], ...payload };
-                } else {
-                    const { data, error } = await _client.from('vocabulary').insert([payload]).select();
-                    if (error) throw error;
-                    if (data) wordsData.unshift(data[0]);
-                }
-                renderWords();
-                toggleAdminPanel();
-                alert("Success! Changes applied.");
-            } catch (err) {
-                alert("Error: " + err.message);
-            } finally {
-                btn.disabled = false;
-                text.innerText = id ? "Save Changes" : "Publish";
-            }
+            if (id) await _client.from('vocabulary').update(payload).eq('id', id);
+            else await _client.from('vocabulary').insert([payload]);
+            location.reload();
         });
 
-        document.getElementById('deleteBtn').addEventListener('click', async () => {
-            const id = document.getElementById('f-id').value;
-            if (confirm('Delete this word?')) {
-                const { error } = await _client.from('vocabulary').delete().eq('id', id);
-                if (!error) { 
-                    wordsData = wordsData.filter(w => w.id !== id);
-                    renderWords();
-                    toggleAdminPanel(); 
-                }
-            }
-        });
-
-        function toggleAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            if (panel.classList.contains('hidden')) {
-                document.getElementById('addWordForm').reset();
-                document.getElementById('f-id').value = "";
-                document.getElementById('adminTitle').innerText = "Add New Content";
-                document.getElementById('btnText').innerText = "Publish";
-                document.getElementById('deleteBtn').classList.add('hidden');
-            }
-            panel.classList.toggle('hidden');
-        }
-
+        function toggleAdminPanel() { document.getElementById('adminPanel').classList.toggle('hidden'); }
         function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
-        
-        function filterWords(l, b) { 
-            libFilter = l; 
-            document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); 
-            b.classList.add('active'); 
-            renderWords(); 
-        }
-        
-        function filterMyWords(s, b) { 
-            myFilter = s; 
-            document.querySelectorAll('.my-filter-btn').forEach(btn => { 
-                btn.classList.remove('text-brand', 'active-filter-btn'); 
-                btn.classList.add('text-gray-400'); 
-            }); 
-            b.classList.add('text-brand', 'active-filter-btn'); 
-            renderWords(); 
-        }
-        
-        function updateUI(l, e) { 
-            if(l) { 
-                document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; 
-                if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); 
-            } 
-        }
-        
+        function filterWords(l, b) { libFilter = l; document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderWords(); }
+        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => btn.classList.remove('text-brand', 'active-filter-btn')); b.classList.add('text-brand', 'active-filter-btn'); renderWords(); }
+        function updateUI(l, e) { if(l) { document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); } }
         async function handleAuth(type) {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
