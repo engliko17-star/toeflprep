@@ -11,9 +11,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        brand: { light: '#F3E8FF', DEFAULT: '#b593c4', dark: '#9a7aa8' }
-                    }
+                    colors: { brand: { light: '#F3E8FF', DEFAULT: '#b593c4', dark: '#9a7aa8' } }
                 }
             }
         }
@@ -26,36 +24,35 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #fcfcfc; }
-        .word-card { transition: all 0.3s ease; border: 0.5px solid rgba(181, 147, 196, 0.3); background: white; }
-        .word-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -15px rgba(181, 147, 196, 0.15); border-color: rgba(181, 147, 196, 0.6); }
-        .nav-link { position: relative; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; transition: all 0.3s; }
-        .nav-link.active { color: #1e293b; }
-        .nav-link.active::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px; background: #b593c4; border-radius: 2px; }
-        .filter-btn { border-radius: 9999px; transition: all 0.2s ease; white-space: nowrap; border: 1px solid #e2e8f0; color: #64748b; padding: 8px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .word-card { transition: all 0.3s ease; border: 0.5px solid rgba(181, 147, 196, 0.3); background: white; border-radius: 35px; }
+        .word-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -15px rgba(181, 147, 196, 0.15); }
+        .nav-link { font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+        .nav-link.active { color: #1e293b; border-bottom: 2px solid #b593c4; }
+        .filter-btn { border-radius: 9999px; padding: 8px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: 1px solid #e2e8f0; color: #64748b; }
         .filter-btn.active { background-color: #b593c4; color: white; border-color: #b593c4; }
-        .section-divider { height: 1px; background: linear-gradient(to right, transparent, #f1f5f9, transparent); margin: 60px 0; }
-        .detail-badge { background: #f3f4f6; color: #b593c4; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
+        .detail-badge { background: #f3f4f6; color: #b593c4; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .side-card { border-radius: 20px; padding: 20px; border: 1px solid #f1f5f9; }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
     <nav id="navBar" class="hidden bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 py-5 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-12">
             <div class="font-black text-2xl text-gray-900 tracking-tighter cursor-pointer" onclick="location.reload()">TOEFL.ai</div>
+            <div class="flex gap-8">
+                <a href="#" class="nav-link active">Vocabulary</a>
+            </div>
         </div>
         <div class="flex items-center gap-6">
-            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand/10 text-brand px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-brand hover:text-white transition">Teacher Cabinet</button>
-            <div id="authSection" class="flex items-center gap-4"></div>
+            <button id="adminBtn" onclick="toggleAdminPanel()" class="hidden bg-brand/10 text-brand px-5 py-2 rounded-full text-[10px] font-black uppercase hover:bg-brand hover:text-white transition">Teacher Cabinet</button>
+            <div id="authSection"></div>
         </div>
     </nav>
 
     <main id="mainContent" class="hidden max-w-7xl mx-auto px-8 py-12">
         <section id="librarySection">
             <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-                <div>
-                    <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2>
-                </div>
+                <h2 class="text-4xl font-black text-gray-900 tracking-tighter">Vocabulary Hub</h2>
                 <div class="flex gap-2 overflow-x-auto pb-2">
                     <button onclick="filterWords('All', this)" class="filter-btn active">All</button>
                     <button onclick="filterWords('Advanced', this)" class="filter-btn">Advanced</button>
@@ -65,15 +62,18 @@
             <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </section>
 
+        <div class="h-px bg-gray-100 my-16"></div>
+        <section id="myProgressSection">
+            <h2 class="text-2xl font-black mb-8">My Words</h2>
+            <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
-            <header class="flex justify-between items-center px-8 py-6 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur-md">
-                <button onclick="hideDetail()" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-arrow-left"></i> К центру
-                </button>
+            <header class="flex justify-between items-center px-8 py-6 border-b border-gray-50 sticky top-0 bg-white/90 z-10">
+                <button onclick="hideDetail()" class="text-gray-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> К центру</button>
                 <div class="flex items-center gap-4">
-                    <button id="editBtn" onclick="openEditMode()" class="hidden w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-brand/10 hover:text-brand transition">
-                        <i class="fa-solid fa-pen-to-square text-xs"></i>
-                    </button>
+                    <button id="editBtn" onclick="openEditMode()" class="hidden w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <div id="statusButtons" class="flex gap-2"></div>
                 </div>
             </header>
             <div id="detailContent" class="max-w-6xl mx-auto px-8 py-16"></div>
@@ -82,34 +82,35 @@
         <section id="adminPanel" class="hidden mt-20 p-10 bg-gray-900 rounded-[50px] text-white">
             <div class="flex justify-between items-center mb-8">
                 <h2 id="adminTitle" class="text-2xl font-black">Add Word</h2>
-                <button type="button" onclick="toggleAdminPanel()" class="text-white/40"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="toggleAdminPanel()" class="text-white/40"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input type="hidden" id="f-id">
-                <input type="text" id="f-word" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Word" required>
-                <select id="f-level" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none">
+                <input type="text" id="f-word" class="bg-white/10 rounded-2xl p-4 outline-none" placeholder="Word" required>
+                <select id="f-level" class="bg-white/10 rounded-2xl p-4 outline-none">
                     <option>Advanced</option>
+                    <option>Upper-Intermediate</option>
                     <option>Intermediate</option>
                     <option>Elementary</option>
                 </select>
-                <input type="text" id="f-pos" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Part of Speech">
-                <input type="number" id="f-progress" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Progress %" min="0" max="100">
-                <textarea id="f-def" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Definition"></textarea>
-                <textarea id="f-tip" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Usage Tip (Совет)"></textarea>
-                <textarea id="f-ex" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Context Example"></textarea>
-                <button type="submit" id="submitBtn" class="md:col-span-2 bg-brand py-5 rounded-2xl font-black uppercase text-xs">Publish</button>
+                <input type="text" id="f-pos" class="bg-white/10 rounded-2xl p-4 outline-none" placeholder="Part of Speech (глагол, сущ. и т.д.)">
+                <input type="number" id="f-progress" class="bg-white/10 rounded-2xl p-4 outline-none" placeholder="Progress %" min="0" max="100">
+                <input type="text" id="f-syn" class="bg-white/10 rounded-2xl p-4 outline-none" placeholder="Synonyms (Синонимы)">
+                <input type="text" id="f-ant" class="bg-white/10 rounded-2xl p-4 outline-none" placeholder="Antonyms (Антонимы)">
+                <textarea id="f-def" class="md:col-span-2 bg-white/10 rounded-2xl p-4 outline-none" placeholder="Definition (Определение)"></textarea>
+                <textarea id="f-tip" class="md:col-span-2 bg-white/10 rounded-2xl p-4 outline-none" placeholder="Usage Tip (Совет)"></textarea>
+                <textarea id="f-ex" class="md:col-span-2 bg-white/10 rounded-2xl p-4 outline-none" placeholder="Context Example"></textarea>
+                <button type="submit" id="submitBtn" class="md:col-span-2 bg-brand py-5 rounded-2xl font-black uppercase">Save Word</button>
             </form>
         </section>
     </main>
 
-    <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-md p-12 rounded-[50px] shadow-2xl text-center">
-            <h3 class="text-4xl font-black mb-8 tracking-tighter text-gray-900">TOEFL.ai</h3>
-            <div class="space-y-4 text-left">
-                <input type="email" id="authEmail" placeholder="Email" class="w-full p-5 bg-gray-50 rounded-2xl outline-none">
-                <input type="password" id="authPass" placeholder="Password" class="w-full p-5 bg-gray-50 rounded-2xl outline-none">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl">Login</button>
-            </div>
+    <div id="authModal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md p-12 rounded-[50px] text-center">
+            <h3 class="text-4xl font-black mb-8 text-gray-900">TOEFL.ai</h3>
+            <input type="email" id="authEmail" placeholder="Email" class="w-full p-5 bg-gray-50 rounded-2xl mb-4 outline-none">
+            <input type="password" id="authPass" placeholder="Password" class="w-full p-5 bg-gray-50 rounded-2xl mb-6 outline-none">
+            <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl">Login</button>
         </div>
     </div>
 
@@ -119,10 +120,10 @@
         const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let wordsData = [];
+        let userProgressMap = {};
         let libFilter = 'All';
         let userRole = 'student';
         let currentUser = null;
-        let currentDetailId = null;
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
@@ -134,8 +135,15 @@
                 document.getElementById('navBar').classList.remove('hidden');
                 document.getElementById('authModal').classList.add('hidden');
                 updateUI(true, currentUser.email);
+                await loadUserProgress();
                 loadWords();
             }
+        }
+
+        async function loadUserProgress() {
+            const { data } = await _client.from('user_progress').select('word_id, status').eq('user_id', currentUser.id);
+            userProgressMap = {};
+            data?.forEach(item => userProgressMap[item.word_id] = item.status);
         }
 
         async function loadWords() {
@@ -144,64 +152,101 @@
         }
 
         function renderWords() {
-            const grid = document.getElementById('wordsGrid');
-            grid.innerHTML = '';
+            const libGrid = document.getElementById('wordsGrid');
+            const myGrid = document.getElementById('myWordsGrid');
+            libGrid.innerHTML = ''; myGrid.innerHTML = '';
+
             let filtered = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
+            libGrid.innerHTML = filtered.map(w => createCardHtml(w)).join('');
             
-            grid.innerHTML = filtered.map(w => `
-                <div class="word-card p-8 rounded-[35px] flex flex-col justify-between min-h-[250px] cursor-pointer" onclick="showDetail('${w.id}')">
+            let myWords = wordsData.filter(w => userProgressMap[w.id]);
+            myGrid.innerHTML = myWords.map(w => createCardHtml(w)).join('');
+        }
+
+        function createCardHtml(w) {
+            const status = userProgressMap[w.id];
+            return `
+                <div class="word-card p-8 flex flex-col justify-between min-h-[280px] cursor-pointer" onclick="showDetail('${w.id}')">
                     <div>
-                        <h3 class="text-2xl font-black text-gray-800 tracking-tighter mb-1">${w.word}</h3>
-                        <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4">${w.pos}</p>
-                        <p class="text-gray-500 text-xs leading-relaxed line-clamp-2">${w.definition}</p>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-2xl font-black text-gray-800 tracking-tighter">${w.word}</h3>
+                            <div class="flex gap-1">
+                                <button onclick="updateStatus('${w.id}', 'learning', event)" class="w-8 h-8 rounded-full border transition flex items-center justify-center ${status === 'learning' ? 'bg-amber-400 text-white border-amber-400' : 'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-bolt text-[10px]"></i></button>
+                                <button onclick="updateStatus('${w.id}', 'mastered', event)" class="w-8 h-8 rounded-full border transition flex items-center justify-center ${status === 'mastered' ? 'bg-green-500 text-white border-green-500' : 'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-check text-[10px]"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-[10px] font-black uppercase mb-4">${w.pos}</p>
+                        <p class="text-gray-500 text-xs leading-relaxed line-clamp-3">${w.definition}</p>
                     </div>
-                    <div class="mt-6 flex justify-between items-center">
+                    <div class="mt-8 flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full border-2 border-brand/20 flex items-center justify-center text-[10px] font-black text-brand">${w.progress || 0}%</div>
-                            <span class="text-[9px] font-black text-gray-300 uppercase tracking-widest">${w.level}</span>
+                             <div class="w-7 h-7 rounded-full border-2 border-brand/20 flex items-center justify-center text-[9px] font-black text-brand">${w.progress || 0}%</div>
+                             <span class="text-[9px] font-black text-brand uppercase">${w.level}</span>
                         </div>
                         <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-300 hover:text-brand"><i class="fa-solid fa-volume-high"></i></button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+        }
+
+        async function updateStatus(wordId, status, e) {
+            if (e) e.stopPropagation();
+            if (status === userProgressMap[wordId]) {
+                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
+                delete userProgressMap[wordId];
+            } else {
+                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: status }, { onConflict: 'user_id, word_id' });
+                userProgressMap[wordId] = status;
+            }
+            renderWords();
+            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
         }
 
         function showDetail(id) {
-            currentDetailId = id;
             const w = wordsData.find(item => item.id === id);
             if (!w) return;
+            const status = userProgressMap[w.id];
             if (userRole === 'admin') document.getElementById('editBtn').classList.remove('hidden');
             
-            const content = document.getElementById('detailContent');
-            content.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+            document.getElementById('statusButtons').innerHTML = `
+                <button onclick="updateStatus('${w.id}', 'learning')" class="px-6 py-2 rounded-full text-[10px] font-bold ${status === 'learning' ? 'bg-amber-400 text-white' : 'bg-gray-50 text-gray-400'}">Обучение</button>
+                <button onclick="updateStatus('${w.id}', 'mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold ${status === 'mastered' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-400'}">Освоено</button>`;
+            
+            document.getElementById('detailContent').innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div class="lg:col-span-2 space-y-12">
                         <div>
                             <span class="detail-badge">${w.level}</span>
                             <div class="flex items-center gap-6 mt-6">
-                                <h2 class="text-7xl font-black text-gray-900 tracking-tighter">${w.word}</h2>
-                                <button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-brand transition"><i class="fa-solid fa-volume-high text-xl"></i></button>
+                                <h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2>
+                                <button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-brand"><i class="fa-solid fa-volume-high text-xl"></i></button>
                             </div>
+                            <p class="text-gray-400 font-bold mt-2">${w.pos}</p>
                         </div>
                         <div>
-                            <h4 class="text-gray-300 font-black text-[10px] uppercase tracking-widest mb-4">ОПРЕДЕЛЕНИЕ</h4>
-                            <p class="text-3xl font-bold text-gray-800">${w.definition}</p>
+                            <h4 class="text-gray-300 font-black text-[10px] uppercase mb-6">ОПРЕДЕЛЕНИЕ</h4>
+                            <p class="text-4xl font-bold text-gray-800">${w.definition}</p>
                         </div>
-                        <div class="bg-gray-900 text-white p-10 rounded-[40px] italic">"${w.example}"</div>
+                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-xl italic">"${w.example}"</div>
                     </div>
                     <div class="space-y-6">
+                        <div class="side-card bg-green-50/50 border-green-100">
+                            <h4 class="text-green-600/50 font-black text-[9px] uppercase mb-4">СИНОНИМЫ</h4>
+                            <p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p>
+                        </div>
+                        <div class="side-card bg-red-50/50 border-red-100">
+                            <h4 class="text-red-600/50 font-black text-[9px] uppercase mb-4">АНТОНИМЫ</h4>
+                            <p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p>
+                        </div>
                         <div class="side-card bg-brand/5 border-brand/10">
-                            <h4 class="text-brand font-black text-[9px] uppercase tracking-widest mb-4">ПРОГРЕСС</h4>
+                            <h4 class="text-brand font-black text-[9px] uppercase mb-4">ПРОГРЕСС</h4>
                             <div class="flex items-center gap-4">
                                 <div class="text-4xl font-black text-brand">${w.progress || 0}%</div>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase leading-tight">Хорошая работа!<br>Продолжайте в том же духе.</p>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase leading-tight">Хорошая работа!</p>
                             </div>
                         </div>
                         ${w.tip ? `
                         <div class="side-card bg-amber-50 border-amber-100">
-                            <h4 class="text-amber-600 font-black text-[9px] uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-lightbulb"></i> СОВЕТ
-                            </h4>
+                            <h4 class="text-amber-600 font-black text-[9px] uppercase mb-2 flex items-center gap-2"><i class="fa-solid fa-lightbulb"></i> СОВЕТ</h4>
                             <p class="text-amber-900 text-sm font-medium leading-relaxed">${w.tip}</p>
                         </div>` : ''}
                     </div>
@@ -214,9 +259,13 @@
             if (!w) return;
             document.getElementById('f-id').value = w.id;
             document.getElementById('f-word').value = w.word;
+            document.getElementById('f-level').value = w.level;
+            document.getElementById('f-pos').value = w.pos;
             document.getElementById('f-progress').value = w.progress || 0;
-            document.getElementById('f-tip').value = w.tip || '';
+            document.getElementById('f-syn').value = w.synonyms || '';
+            document.getElementById('f-ant').value = w.antonyms || '';
             document.getElementById('f-def').value = w.definition;
+            document.getElementById('f-tip').value = w.tip || '';
             document.getElementById('f-ex').value = w.example;
             hideDetail();
             document.getElementById('adminPanel').classList.remove('hidden');
@@ -230,14 +279,14 @@
                 level: document.getElementById('f-level').value,
                 pos: document.getElementById('f-pos').value,
                 progress: parseInt(document.getElementById('f-progress').value) || 0,
-                tip: document.getElementById('f-tip').value,
+                synonyms: document.getElementById('f-syn').value,
+                antonyms: document.getElementById('f-ant').value,
                 definition: document.getElementById('f-def').value,
+                tip: document.getElementById('f-tip').value,
                 example: document.getElementById('f-ex').value
             };
-
             if (id) await _client.from('vocabulary').update(payload).eq('id', id);
             else await _client.from('vocabulary').insert([payload]);
-            
             location.reload();
         });
 
@@ -248,10 +297,9 @@
         async function handleAuth(type) {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
-            const { error } = await _client.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message); else location.reload();
+            await _client.auth.signInWithPassword({ email, password });
+            location.reload();
         }
-
         checkSession();
     </script>
 </body>
