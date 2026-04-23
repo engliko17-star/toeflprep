@@ -122,7 +122,6 @@
                     <div id="statusButtons" class="flex gap-2"></div>
                 </div>
             </header>
-
             <div id="detailContent" class="max-w-6xl mx-auto px-8 py-16"></div>
         </div>
 
@@ -258,6 +257,7 @@
         function showDetail(id) {
             currentDetailId = id;
             const w = wordsData.find(item => item.id === id);
+            if (!w) return;
             const status = userProgressMap[w.id];
             
             if (userRole === 'admin') document.getElementById('editBtn').classList.remove('hidden');
@@ -299,25 +299,15 @@
                             <h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">АНТОНИМЫ</h4>
                             <p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p>
                         </div>
-                        <div class="side-card bg-gray-50/50 border-gray-100">
-                            <h4 class="text-gray-400 font-black text-[9px] uppercase tracking-widest mb-6">ПРОГРЕСС</h4>
-                            <div class="flex items-center gap-6">
-                                <div class="relative w-16 h-16 flex items-center justify-center">
-                                    <svg class="w-full h-full transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent" class="text-gray-100"/><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" fill="transparent" class="text-green-500" stroke-dasharray="175" stroke-dashoffset="${status === 'mastered' ? '0' : '35'}"/></svg>
-                                    <span class="absolute text-xs font-black">${status === 'mastered' ? '100%' : '80%'}</span>
-                                </div>
-                                <div><p class="text-sm font-black text-gray-800">Хорошая работа!</p></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
             document.getElementById('detailView').classList.remove('hidden');
         }
 
-        // РЕДАКТИРОВАНИЕ
         function openEditMode() {
             const w = wordsData.find(item => item.id === currentDetailId);
+            if (!w) return;
             document.getElementById('f-id').value = w.id;
             document.getElementById('f-word').value = w.word;
             document.getElementById('f-level').value = w.level;
@@ -358,7 +348,6 @@
         function toggleAdminPanel() {
             const panel = document.getElementById('adminPanel');
             if (panel.classList.contains('hidden')) {
-                // Сброс на добавление нового слова
                 document.getElementById('addWordForm').reset();
                 document.getElementById('f-id').value = "";
                 document.getElementById('adminTitle').innerText = "Add New Content";
@@ -376,31 +365,43 @@
             }
         }
 
+        // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК ФОРМЫ
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('f-id').value;
             const payload = {
-                word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
-                pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value,
+                word: document.getElementById('f-word').value, 
+                level: document.getElementById('f-level').value,
+                pos: document.getElementById('f-pos').value, 
+                synonyms: document.getElementById('f-syn').value,
                 antonyms: document.getElementById('f-ant').value,
-                definition: document.getElementById('f-def').value, example: document.getElementById('f-ex').value
+                definition: document.getElementById('f-def').value, 
+                example: document.getElementById('f-ex').value
             };
 
-            let error;
-            if (id) {
-                ({ error } = await _client.from('vocabulary').update(payload).eq('id', id));
+            let res;
+            if (id && id !== "") {
+                res = await _client.from('vocabulary').update(payload).eq('id', id);
             } else {
-                ({ error } = await _client.from('vocabulary').insert([payload]));
+                res = await _client.from('vocabulary').insert([payload]);
             }
 
-            if (!error) { toggleAdminPanel(); loadWords(); }
+            if (!res.error) { 
+                await loadWords(); // Перезагружаем данные
+                toggleAdminPanel(); // Закрываем панель
+            } else {
+                alert("Error: " + res.error.message);
+            }
         });
 
         document.getElementById('deleteBtn').addEventListener('click', async () => {
             const id = document.getElementById('f-id').value;
             if (confirm('Delete this word?')) {
                 const { error } = await _client.from('vocabulary').delete().eq('id', id);
-                if (!error) { toggleAdminPanel(); loadWords(); }
+                if (!error) { 
+                    await loadWords();
+                    toggleAdminPanel(); 
+                }
             }
         });
 
