@@ -114,7 +114,7 @@
         <section id="adminPanel" class="hidden mt-20 p-10 bg-gray-900 rounded-[50px] text-white">
             <div class="flex justify-between items-center mb-8">
                 <h2 id="adminTitle" class="text-2xl font-black">Add New Content</h2>
-                <button onclick="toggleAdminPanel()" class="text-white/40 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="toggleAdminPanel()" class="text-white/40 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input type="hidden" id="f-id">
@@ -204,17 +204,38 @@
         }
 
         async function loadWords() {
-            const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
-            if (data) { wordsData = data; renderWords(); }
+            // Принудительно запрашиваем самые свежие данные
+            const { data, error } = await _client
+                .from('vocabulary')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error("Fetch error:", error);
+                return;
+            }
+            
+            wordsData = data;
+            renderWords();
         }
 
         function renderWords() {
             const libGrid = document.getElementById('wordsGrid');
             const myGrid = document.getElementById('myWordsGrid');
+            
+            // Очищаем перед рендером
+            libGrid.innerHTML = '';
+            myGrid.innerHTML = '';
+
             let filteredLib = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
             libGrid.innerHTML = filteredLib.map(w => createCardHtml(w)).join('');
+            
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
-            myGrid.innerHTML = myWords.length > 0 ? myWords.map(w => createCardHtml(w)).join('') : `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
+            if (myWords.length > 0) {
+                myGrid.innerHTML = myWords.map(w => createCardHtml(w)).join('');
+            } else {
+                myGrid.innerHTML = `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
+            }
         }
 
         function createCardHtml(w) {
@@ -263,7 +284,7 @@
                             <h4 class="text-gray-300 font-black text-[10px] uppercase tracking-[0.2em] mb-6">ОПРЕДЕЛЕНИЕ</h4>
                             <p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p>
                         </div>
-                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium leading-relaxed italic italic">"${w.example}"</p></div>
+                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium leading-relaxed italic">"${w.example}"</p></div>
                     </div>
                     <div class="space-y-6">
                         <div class="side-card bg-green-50/50 border-green-100">
@@ -334,7 +355,6 @@
             }
         }
 
-        // КЛЮЧЕВОЙ ОБРАБОТЧИК ФОРМЫ (С ЛОГАМИ И ЗАГРУЗКОЙ)
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('f-id').value;
@@ -354,26 +374,28 @@
 
             btn.disabled = true;
             loader.classList.remove('hidden');
-            text.innerText = "Processing...";
+            text.innerText = "Saving...";
 
             try {
-                let error;
+                let res;
                 if (id && id.trim() !== "") {
-                    const result = await _client.from('vocabulary').update(payload).eq('id', id);
-                    error = result.error;
+                    res = await _client.from('vocabulary').update(payload).eq('id', id);
                 } else {
-                    const result = await _client.from('vocabulary').insert([payload]);
-                    error = result.error;
+                    res = await _client.from('vocabulary').insert([payload]);
                 }
 
-                if (error) throw error;
+                if (res.error) throw res.error;
 
-                await loadWords();
+                // КЛЮЧЕВОЙ МОМЕНТ: Сначала закрываем, потом загружаем
                 toggleAdminPanel();
-                alert("Success!");
+                await loadWords(); 
+                
+                // Прокрутка вверх, чтобы увидеть изменения
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
             } catch (err) {
-                console.error("Supabase Error:", err);
-                alert("Error: " + (err.message || "Something went wrong"));
+                console.error("Error:", err);
+                alert("Error saving: " + err.message);
             } finally {
                 btn.disabled = false;
                 loader.classList.add('hidden');
@@ -385,8 +407,10 @@
             const id = document.getElementById('f-id').value;
             if (confirm('Delete this word?')) {
                 const { error } = await _client.from('vocabulary').delete().eq('id', id);
-                if (!error) { await loadWords(); toggleAdminPanel(); }
-                else { alert(error.message); }
+                if (!error) { 
+                    toggleAdminPanel();
+                    await loadWords(); 
+                }
             }
         });
 
