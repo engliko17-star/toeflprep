@@ -32,6 +32,7 @@
         .filter-btn.active { background-color: #b593c4; color: white; border-color: #b593c4; }
         .detail-badge { background: #f3f4f6; color: #b593c4; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
         .side-card { border-radius: 24px; padding: 24px; border: 1px solid #f1f5f9; background: white; }
+        .status-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 8px; transition: all 0.2s; }
     </style>
 </head>
 <body>
@@ -57,6 +58,12 @@
                 </div>
             </div>
             <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
+        <div class="h-px bg-gray-100 my-16"></div>
+        <section id="myProgressSection">
+            <h2 class="text-3xl font-black text-gray-900 tracking-tighter mb-8">My words <span class="text-brand ml-2">open</span></h2>
+            <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </section>
 
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
@@ -145,31 +152,45 @@
         }
 
         function renderWords() {
-            const grid = document.getElementById('wordsGrid');
+            const libGrid = document.getElementById('wordsGrid');
+            const myGrid = document.getElementById('myWordsGrid');
+            
+            // Фильтрация для общего хаба
             let filtered = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
-            grid.innerHTML = filtered.map(w => {
-                const status = userProgressMap[w.id];
-                return `
-                <div class="word-card p-8 flex flex-col justify-between min-h-[280px] cursor-pointer" onclick="showDetail('${w.id}')">
-                    <div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-2xl font-black text-gray-800 tracking-tighter">${w.word}</h3>
-                            <div class="flex gap-1">
-                                <div class="w-2 h-2 rounded-full ${status === 'learning' ? 'bg-amber-400' : status === 'mastered' ? 'bg-green-500' : 'bg-gray-100'}"></div>
-                            </div>
-                        </div>
-                        <p class="text-gray-400 text-[10px] font-black uppercase mb-4">${w.pos}</p>
-                        <p class="text-gray-500 text-xs leading-relaxed line-clamp-3">${w.definition}</p>
-                    </div>
-                    <div class="mt-8 flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                             <div class="w-8 h-8 rounded-full border-2 border-brand/20 flex items-center justify-center text-[9px] font-black text-brand">${w.progress || 0}%</div>
-                             <span class="text-[9px] font-black text-brand uppercase tracking-widest">${w.level}</span>
-                        </div>
+            libGrid.innerHTML = filtered.map(w => createCardHtml(w)).join('');
+            
+            // Фильтрация для "My Words" (те, у кого есть статус)
+            let myWords = wordsData.filter(w => userProgressMap[w.id]);
+            myGrid.innerHTML = myWords.map(w => createCardHtml(w)).join('');
+        }
+
+        function createCardHtml(w) {
+            const status = userProgressMap[w.id];
+            return `
+            <div class="word-card p-8 flex flex-col justify-between min-h-[300px] cursor-pointer" onclick="showDetail('${w.id}')">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-3xl font-black text-gray-800 tracking-tighter">${w.word}</h3>
                         <button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-300 hover:text-brand transition"><i class="fa-solid fa-volume-high"></i></button>
                     </div>
-                </div>`;
-            }).join('');
+                    <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-6">${w.definition}</p>
+                    
+                    <div class="flex gap-2 mb-6">
+                        <button onclick="event.stopPropagation(); updateStatus('${w.id}', 'learning')" 
+                                class="status-pill ${status === 'learning' ? 'bg-amber-100 text-amber-600' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}">Learning</button>
+                        <button onclick="event.stopPropagation(); updateStatus('${w.id}', 'mastered')" 
+                                class="status-pill ${status === 'mastered' ? 'bg-green-100 text-green-600' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}">Mastered</button>
+                        <button onclick="event.stopPropagation(); updateStatus('${w.id}', null)" 
+                                class="status-pill bg-gray-50 text-gray-300 hover:text-red-400"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center pt-6 border-t border-gray-50">
+                    <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest">${w.level}</span>
+                    <div class="flex items-center gap-2">
+                         <div class="w-8 h-8 rounded-full border-2 border-brand/20 flex items-center justify-center text-[10px] font-black text-brand">${w.progress || 0}%</div>
+                    </div>
+                </div>
+            </div>`;
         }
 
         function showDetail(id) {
@@ -185,8 +206,8 @@
             }
 
             document.getElementById('statusButtons').innerHTML = `
-                <button onclick="updateStatus('${w.id}', 'learning')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'learning' ? 'bg-amber-400 text-white' : 'bg-gray-50 text-gray-400'}">Обучение</button>
-                <button onclick="updateStatus('${w.id}', 'mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'mastered' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-400'}">Освоено</button>`;
+                <button onclick="updateStatus('${w.id}', 'learning')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'learning' ? 'bg-amber-400 text-white' : 'bg-gray-50 text-gray-400'}">Learning</button>
+                <button onclick="updateStatus('${w.id}', 'mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'mastered' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-400'}">Mastered</button>`;
             
             document.getElementById('detailContent').innerHTML = `
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -197,14 +218,14 @@
                                 <h2 class="text-7xl font-black text-gray-900 tracking-tighter">${w.word}</h2>
                                 <button onclick="speak('${w.word}')" class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-brand transition"><i class="fa-solid fa-volume-high"></i></button>
                             </div>
-                            <p class="text-gray-400 font-bold mt-2">${w.pos}</p>
+                            <p class="text-gray-400 font-bold mt-2 uppercase text-[11px] tracking-widest">${w.pos || ''}</p>
                         </div>
                         <div>
                             <h4 class="text-gray-300 font-black text-[10px] uppercase mb-6 tracking-widest">ОПРЕДЕЛЕНИЕ</h4>
                             <p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p>
                         </div>
                         <div class="bg-gray-900 text-white p-10 rounded-[40px] italic shadow-2xl">
-                             <h4 class="text-white/30 text-[9px] font-black uppercase mb-4 not-italic">Контекст</h4>
+                             <h4 class="text-white/30 text-[9px] font-black uppercase mb-4 not-italic tracking-widest">Использование в контексте</h4>
                              "${w.example}"
                         </div>
                     </div>
@@ -226,8 +247,8 @@
                         </div>
                         ${w.tip ? `
                         <div class="side-card bg-amber-50 border-amber-100">
-                            <h4 class="text-amber-600 font-black text-[9px] uppercase mb-2 flex items-center gap-2"><i class="fa-solid fa-lightbulb"></i> СОВЕТ</h4>
-                            <p class="text-amber-900 text-sm font-medium leading-relaxed">${w.tip}</p>
+                            <h4 class="text-amber-600 font-black text-[9px] uppercase mb-2 flex items-center gap-2 tracking-widest"><i class="fa-solid fa-lightbulb"></i> СОВЕТ</h4>
+                            <p class="text-amber-900 text-sm font-medium leading-relaxed font-semibold">${w.tip}</p>
                         </div>` : ''}
                     </div>
                 </div>`;
@@ -249,18 +270,25 @@
             document.getElementById('f-ex').value = w.example;
             hideDetail();
             document.getElementById('adminPanel').classList.remove('hidden');
+            document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function updateStatus(wordId, status) {
-            if (status === userProgressMap[wordId]) {
+            // Если статус null - удаляем прогресс
+            if (!status) {
+                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
+                delete userProgressMap[wordId];
+            } else if (status === userProgressMap[wordId]) {
+                // Если кликнули на активный статус - удаляем его (Toggle)
                 await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
                 delete userProgressMap[wordId];
             } else {
-                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: status });
+                // Ставим новый статус
+                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: status }, { onConflict: 'user_id, word_id' });
                 userProgressMap[wordId] = status;
             }
             renderWords();
-            showDetail(wordId);
+            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
         }
 
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
