@@ -59,7 +59,38 @@
     </nav>
 
     <main id="mainContent" class="hidden max-w-7xl mx-auto px-8 py-12">
+        
+        <section id="myProgressSection" class="bg-gray-50/50 -mx-8 px-8 py-16 rounded-[60px] mb-16">
+            <div id="myWordsBack" class="hidden mb-8">
+                <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
+                    <i class="fa-solid fa-arrow-left"></i> Назад
+                </button>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
+                        <i class="fa-solid fa-bookmark text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-900 tracking-tighter">My Words</h2>
+                    </div>
+                </div>
+                <div class="flex bg-white p-1.5 rounded-full border border-gray-100 shadow-sm">
+                    <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-brand hover:text-brand active-filter-btn">In Progress</button>
+                    <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">Mastered</button>
+                </div>
+            </div>
+            <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
+        <div id="mainDivider" class="section-divider"></div>
+
         <section id="librarySection">
+            <div id="libBack" class="hidden mb-8">
+                <button onclick="switchView('home')" class="text-gray-400 hover:text-gray-900 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 transition">
+                    <i class="fa-solid fa-arrow-left"></i> Назад
+                </button>
+            </div>
             <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
                 <div>
                     <h2 class="text-4xl font-black text-gray-900 tracking-tighter mb-2">Vocabulary Hub</h2>
@@ -74,26 +105,6 @@
                 </div>
             </div>
             <div id="wordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-        </section>
-
-        <div class="section-divider"></div>
-
-        <section id="myProgressSection" class="bg-gray-50/50 -mx-8 px-8 py-16 rounded-[60px]">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand/20">
-                        <i class="fa-solid fa-bookmark text-xl"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-3xl font-black text-gray-900 tracking-tighter">My Words</h2>
-                    </div>
-                </div>
-                <div class="flex bg-white p-1.5 rounded-full border border-gray-100 shadow-sm">
-                    <button onclick="filterMyWords('learning', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">In Progress</button>
-                    <button onclick="filterMyWords('mastered', this)" class="my-filter-btn px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition text-gray-400 hover:text-brand">Mastered</button>
-                </div>
-            </div>
-            <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </section>
 
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
@@ -171,6 +182,7 @@
         let userRole = 'student';
         let currentUser = null;
         let currentDetailId = null;
+        let activeView = 'home'; // 'home', 'my-all', 'lib-all'
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
@@ -200,17 +212,67 @@
             renderWords();
         }
 
+        function switchView(view) {
+            activeView = view;
+            renderWords();
+            window.scrollTo(0, 0);
+        }
+
         function renderWords() {
             const libGrid = document.getElementById('wordsGrid');
             const myGrid = document.getElementById('myWordsGrid');
-            libGrid.innerHTML = '';
-            myGrid.innerHTML = '';
+            const libSec = document.getElementById('librarySection');
+            const mySec = document.getElementById('myProgressSection');
+            const divider = document.getElementById('mainDivider');
 
-            let filteredLib = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
-            libGrid.innerHTML = filteredLib.map(w => createCardHtml(w)).join('');
-            
+            // View Management
+            if (activeView === 'home') {
+                libSec.classList.remove('hidden');
+                mySec.classList.remove('hidden');
+                divider.classList.remove('hidden');
+                document.getElementById('myWordsBack').classList.add('hidden');
+                document.getElementById('libBack').classList.add('hidden');
+            } else if (activeView === 'my-all') {
+                libSec.classList.add('hidden');
+                divider.classList.add('hidden');
+                mySec.classList.remove('hidden');
+                document.getElementById('myWordsBack').classList.remove('hidden');
+            } else if (activeView === 'lib-all') {
+                mySec.classList.add('hidden');
+                divider.classList.add('hidden');
+                libSec.classList.remove('hidden');
+                document.getElementById('libBack').classList.remove('hidden');
+            }
+
+            // My Words Render
             let myWords = wordsData.filter(w => userProgressMap[w.id] === myFilter);
-            myGrid.innerHTML = myWords.length > 0 ? myWords.map(w => createCardHtml(w)).join('') : `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
+            let myLimit = activeView === 'my-all' ? myWords.length : 20;
+            let myHtml = myWords.length > 0 ? myWords.slice(0, myLimit).map(w => createCardHtml(w)).join('') : `<div class="col-span-full py-10 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No words here yet</div>`;
+            
+            if (activeView === 'home' && myWords.length > 20) {
+                myHtml += `
+                <div class="col-span-full flex justify-center mt-8">
+                    <button onclick="switchView('my-all')" class="bg-brand/10 hover:bg-brand/20 text-brand px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">
+                        View All My Words (${myWords.length})
+                    </button>
+                </div>`;
+            }
+            myGrid.innerHTML = myHtml;
+
+            // Library Render
+            let filteredLib = libFilter === 'All' ? wordsData : wordsData.filter(w => w.level === libFilter);
+            let libLimit = activeView === 'lib-all' ? filteredLib.length : 20;
+            let libHtml = filteredLib.slice(0, libLimit).map(w => createCardHtml(w)).join('');
+            
+            if (activeView === 'home' && filteredLib.length > 20) {
+                libHtml += `
+                <div class="col-span-full flex justify-center mt-8">
+                    <button onclick="switchView('lib-all')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition">
+                        View All Library (${filteredLib.length})
+                    </button>
+                </div>`;
+            }
+            libGrid.innerHTML = libHtml;
         }
 
         function createCardHtml(w) {
@@ -391,9 +453,31 @@
         }
 
         function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
-        function filterWords(l, b) { libFilter = l; document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderWords(); }
-        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => { btn.classList.remove('text-brand', 'font-black'); btn.classList.add('text-gray-400'); }); b.classList.add('text-brand', 'font-black'); renderWords(); }
-        function updateUI(l, e) { if(l) { document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); } }
+        
+        function filterWords(l, b) { 
+            libFilter = l; 
+            document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); 
+            b.classList.add('active'); 
+            renderWords(); 
+        }
+        
+        function filterMyWords(s, b) { 
+            myFilter = s; 
+            document.querySelectorAll('.my-filter-btn').forEach(btn => { 
+                btn.classList.remove('text-brand', 'active-filter-btn'); 
+                btn.classList.add('text-gray-400'); 
+            }); 
+            b.classList.add('text-brand', 'active-filter-btn'); 
+            renderWords(); 
+        }
+        
+        function updateUI(l, e) { 
+            if(l) { 
+                document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`; 
+                if(userRole==='admin') document.getElementById('adminBtn').classList.remove('hidden'); 
+            } 
+        }
+        
         async function handleAuth(type) {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
