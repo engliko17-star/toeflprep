@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOEFL Prep </title>
+    <title>TOEFL Prep Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,7 +25,7 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #ffffff; scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; }
         .word-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .word-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.08); }
         .filter-btn { border-radius: 9999px; transition: all 0.2s ease; white-space: nowrap; }
@@ -33,7 +33,6 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen bg-white text-gray-900">
@@ -52,7 +51,7 @@
         <div id="listView">
             <header class="mb-12">
                 <h1 class="text-5xl font-black text-gray-900 mb-3 tracking-tighter">Vocabulary Hub</h1>
-                <p class="text-gray-400 font-medium">Mastering levels from Elementary to Advanced for TOEFL 2026.</p>
+                <p class="text-gray-400 font-medium">Personalized path for TOEFL 2026 Preparation.</p>
             </header>
 
             <div class="flex flex-wrap gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
@@ -76,7 +75,7 @@
 
         <section id="adminPanel" class="hidden mt-20 pt-16 border-t border-gray-100">
             <div class="bg-gray-50 p-10 rounded-[40px] border-2 border-dashed border-brand/20 shadow-inner">
-                <h2 class="text-2xl font-black text-gray-800 mb-8"><i class="fa-solid fa-pen-nib mr-3 text-brand"></i> Add New Word Card</h2>
+                <h2 class="text-2xl font-black text-gray-800 mb-8">Add New Word</h2>
                 <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <input type="text" id="f-word" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Word" required>
                     <select id="f-level" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm">
@@ -86,7 +85,7 @@
                     <input type="text" id="f-syn" class="w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Synonyms">
                     <textarea id="f-def" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Definition"></textarea>
                     <textarea id="f-ex" rows="2" class="md:col-span-2 w-full bg-white border-none rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand shadow-sm" placeholder="Context Sentence"></textarea>
-                    <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Cloud</button>
+                    <button type="submit" class="md:col-span-2 bg-gray-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition uppercase tracking-widest text-xs">Add to Database</button>
                 </form>
             </div>
         </section>
@@ -95,11 +94,11 @@
     <div id="authModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl relative animate-fade-in">
             <button onclick="closeAuthModal()" class="absolute top-8 right-8 text-gray-300 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-4xl font-black mb-8 tracking-tighter">TOEFL Prep</h3>
+            <h3 class="text-4xl font-black mb-8 tracking-tighter text-gray-800">Sign In</h3>
             <div class="space-y-4">
                 <input type="email" id="authEmail" placeholder="Email" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
                 <input type="password" id="authPass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-brand">
-                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition">Sign In</button>
+                <button onclick="handleAuth('login')" class="w-full bg-brand text-white font-black py-5 rounded-2xl shadow-lg hover:bg-brand-dark transition">Enter</button>
                 <button onclick="handleAuth('signup')" class="w-full text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-brand transition mt-4">Create Account</button>
             </div>
         </div>
@@ -112,36 +111,85 @@
 
         let wordsData = [];
         let currentFilter = 'All';
-        let userSession = null;
         let userRole = 'student';
 
+        // --- ГЛАВНАЯ ПРОВЕРКА ---
         async function checkSession() {
-            const { data: { session } } = await _client.auth.getSession();
+            const { data: { session }, error: sessionError } = await _client.auth.getSession();
+            
+            if (sessionError) {
+                console.error("Session Error:", sessionError.message);
+                return;
+            }
+
             if (session) {
-                userSession = session.user;
-                const { data: profile } = await _client.from('profiles').select('role').eq('id', userSession.id).single();
-                userRole = profile?.role || 'student';
-                updateUI(true);
-            } else { updateUI(false); }
+                const user = session.user;
+                console.log("Юзер найден:", user.email);
+
+                // Форсированная проверка роли (ищем массив, а не одиночную запись)
+                const { data: profiles, error: profileError } = await _client
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id);
+
+                if (profileError) {
+                    console.error("Ошибка запроса профиля:", profileError.message);
+                }
+
+                if (profiles && profiles.length > 0) {
+                    userRole = profiles[0].role;
+                    console.log("ВАША РОЛЬ В БАЗЕ:", userRole);
+                } else {
+                    console.warn("Профиль не найден в таблице profiles. По умолчанию: student");
+                    userRole = 'student';
+                }
+
+                updateUI(true, user.email);
+            } else {
+                console.log("Пользователь не залогинен");
+                updateUI(false);
+            }
             loadWords();
         }
 
-        function updateUI(loggedIn) {
+        function updateUI(loggedIn, email = '') {
             const authSection = document.getElementById('authSection');
             const adminBtn = document.getElementById('adminBtn');
+            
             if (loggedIn) {
-                authSection.innerHTML = `<button onclick="_client.auth.signOut().then(() => location.reload())" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>`;
-                if (userRole === 'admin') adminBtn.classList.remove('hidden');
+                authSection.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest hidden md:block">${email}</span>
+                        <button onclick="logout()" class="text-xs font-black uppercase tracking-widest text-red-300 hover:text-red-500 transition">Exit</button>
+                    </div>
+                `;
+                if (userRole === 'admin') {
+                    console.log("Отображаю кнопку админа!");
+                    adminBtn.classList.remove('hidden');
+                }
+            } else {
+                authSection.innerHTML = `<button onclick="showAuthModal()" class="text-gray-400 hover:text-brand font-bold text-sm transition">Log In</button>`;
+                adminBtn.classList.add('hidden');
             }
+        }
+
+        async function logout() {
+            await _client.auth.signOut();
+            window.location.reload();
         }
 
         async function handleAuth(type) {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPass').value;
-            const { error } = (type === 'login') ? await _client.auth.signInWithPassword({ email, password }) : await _client.auth.signUp({ email, password });
-            if (error) alert(error.message); else location.reload();
+            const { error } = (type === 'login') 
+                ? await _client.auth.signInWithPassword({ email, password }) 
+                : await _client.auth.signUp({ email, password });
+            
+            if (error) alert(error.message); 
+            else window.location.reload();
         }
 
+        // --- ВОКАБУЛЯР ---
         async function loadWords() {
             const { data } = await _client.from('vocabulary').select('*').order('created_at', { ascending: false });
             if (data) { wordsData = data; renderWords(data); }
@@ -173,7 +221,7 @@
             const content = document.getElementById('detailContent');
             content.innerHTML = `
                 <div id="detailCard" class="bg-white p-12 rounded-[50px] border border-gray-100 shadow-2xl relative">
-                    ${userRole === 'admin' ? `<button onclick="editWord('${w.id}')" class="absolute top-8 right-12 bg-brand-light text-brand font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-full hover:bg-brand hover:text-white transition shadow-sm">Edit Card</button>` : ''}
+                    ${userRole === 'admin' ? `<button onclick="editWord('${w.id}')" class="absolute top-8 right-12 bg-brand-light text-brand font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-full hover:bg-brand hover:text-white transition">Edit Card</button>` : ''}
                     <div class="flex items-center mb-4">
                         <h2 class="text-7xl font-black text-brand tracking-tighter mr-6">${w.word}</h2>
                         <button onclick="speak('${w.word}')" class="text-gray-200 hover:text-brand transition"><i class="fa-solid fa-volume-high text-4xl"></i></button>
@@ -182,10 +230,6 @@
                     <div class="space-y-12">
                         <section><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Definition</h4><p class="text-gray-700 text-2xl leading-tight font-semibold">${w.definition || '-'}</p></section>
                         <section class="bg-gray-50 p-10 rounded-[40px] border-l-[12px] border-brand"><h4 class="font-black text-gray-300 mb-4 text-[10px] uppercase tracking-[0.2em]">Context Example</h4><p class="text-gray-500 italic text-xl leading-relaxed">"${w.example || '-'}"</p></section>
-                        <div class="grid grid-cols-2 gap-10 pt-10 border-t border-gray-50">
-                            <div><h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Synonyms</h4><p class="text-brand font-black text-xl tracking-tight">${w.synonyms || '-'}</p></div>
-                            <div><h4 class="font-black text-gray-300 mb-2 text-[10px] uppercase tracking-[0.2em]">Antonyms</h4><p class="text-gray-400 font-black text-xl tracking-tight">${w.antonyms || '-'}</p></div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -198,8 +242,8 @@
             const w = wordsData.find(item => item.id === id);
             document.getElementById('detailCard').innerHTML = `
                 <div class="space-y-6">
-                    <h2 class="text-2xl font-black uppercase tracking-widest text-brand">Edit Mode</h2>
-                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none pb-2">
+                    <h2 class="text-2xl font-black text-brand">Edit Card</h2>
+                    <input type="text" id="e-word" value="${w.word}" class="w-full text-4xl font-black border-b-2 border-brand outline-none">
                     <div class="grid grid-cols-2 gap-4">
                         <select id="e-level" class="p-4 bg-gray-50 rounded-2xl outline-none">
                             <option ${w.level === 'Advanced' ? 'selected' : ''}>Advanced</option>
@@ -208,13 +252,12 @@
                             <option ${w.level === 'Pre-Intermediate' ? 'selected' : ''}>Pre-Intermediate</option>
                             <option ${w.level === 'Elementary' ? 'selected' : ''}>Elementary</option>
                         </select>
-                        <input type="text" id="e-pos" value="${w.pos || ''}" class="p-4 bg-gray-50 rounded-2xl outline-none" placeholder="POS">
+                        <input type="text" id="e-pos" value="${w.pos || ''}" class="p-4 bg-gray-50 rounded-2xl outline-none">
                     </div>
                     <textarea id="e-def" rows="3" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.definition || ''}</textarea>
                     <textarea id="e-ex" rows="2" class="w-full p-4 bg-gray-50 rounded-2xl outline-none">${w.example || ''}</textarea>
-                    <input type="text" id="e-syn" value="${w.synonyms || ''}" class="w-full p-4 bg-gray-50 rounded-2xl outline-none" placeholder="Synonyms">
                     <div class="flex gap-4">
-                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl shadow-lg">Save Changes</button>
+                        <button onclick="saveEdit('${id}')" class="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl">Save</button>
                         <button onclick="showDetail('${id}')" class="px-8 bg-gray-100 text-gray-400 font-black py-4 rounded-2xl">Cancel</button>
                     </div>
                 </div>
@@ -227,11 +270,11 @@
                 level: document.getElementById('e-level').value,
                 pos: document.getElementById('e-pos').value,
                 definition: document.getElementById('e-def').value,
-                example: document.getElementById('e-ex').value,
-                synonyms: document.getElementById('e-syn').value
+                example: document.getElementById('e-ex').value
             };
-            const { error } = await _client.from('vocabulary').update(updated).eq('id', id);
-            if (error) alert(error.message); else { await loadWords(); showDetail(id); }
+            await _client.from('vocabulary').update(updated).eq('id', id);
+            await loadWords(); 
+            showDetail(id);
         }
 
         function filterWords(level, btn) {
@@ -251,10 +294,10 @@
             const payload = {
                 word: document.getElementById('f-word').value, level: document.getElementById('f-level').value,
                 pos: document.getElementById('f-pos').value, definition: document.getElementById('f-def').value,
-                example: document.getElementById('f-ex').value, synonyms: document.getElementById('f-syn').value
+                example: document.getElementById('f-ex').value
             };
             const { error } = await _client.from('vocabulary').insert([payload]);
-            if (error) alert(error.message); else { document.getElementById('addWordForm').reset(); loadWords(); }
+            if (!error) { document.getElementById('addWordForm').reset(); loadWords(); }
         });
 
         checkSession();
