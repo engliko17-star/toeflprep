@@ -18,6 +18,15 @@
             }
         }
 
+        // Озвучка для карточек (Vocabulary)
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Озвучка всех трех форм (Verbs)
         function speakVerbForms(v1, v2, v3) {
             window.speechSynthesis.cancel();
             const forms = [v1, v2, v3];
@@ -31,12 +40,6 @@
                 }, delay);
                 delay += 1000;
             });
-        }
-
-        function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            window.speechSynthesis.speak(utterance);
         }
     </script>
     <style>
@@ -56,12 +59,14 @@
         .loading-spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid #fff; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
+        /* Стили для таблицы глаголов */
         .verb-row { border-bottom: 1px solid #f8fafc; transition: background 0.2s; }
         .verb-row:hover { background-color: #f8fafc; }
-        .search-input:focus { box-shadow: 0 10px 30px -10px rgba(181, 147, 196, 0.2); }
-        
-        /* Кнопка озвучки всегда видна, но аккуратна */
-        .audio-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; items-center; justify-content: center; background: #f8fafc; color: #cbd5e1; transition: all 0.2s; border: 1px solid #f1f5f9; }
+        .audio-btn { 
+            width: 32px; height: 32px; border-radius: 50%; 
+            display: flex; items-center; justify-content: center; 
+            background: #f8fafc; color: #cbd5e1; transition: all 0.2s; border: 1px solid #f1f5f9; 
+        }
         .audio-btn:hover { background: #b593c4; color: white; border-color: #b593c4; transform: scale(1.1); }
     </style>
 </head>
@@ -109,7 +114,7 @@
                 <div id="myWordsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
             </section>
 
-            <div class="section-divider" id="mainDivider"></div>
+            <div id="mainDivider" class="section-divider"></div>
 
             <section id="librarySection">
                 <div id="libBack" class="hidden mb-8">
@@ -144,7 +149,7 @@
                     <div class="relative w-full md:w-96">
                         <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"></i>
                         <input type="text" id="verbSearch" oninput="filterVerbsTable()" placeholder="Search verb or translation..." 
-                            class="search-input w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium outline-none transition-all focus:border-brand">
+                            class="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium outline-none transition-all focus:border-brand focus:shadow-lg focus:shadow-brand/5">
                     </div>
                 </div>
 
@@ -158,8 +163,7 @@
                                 <th class="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Translation</th>
                             </tr>
                         </thead>
-                        <tbody id="verbsTableBody">
-                            </tbody>
+                        <tbody id="verbsTableBody"></tbody>
                     </table>
                 </div>
             </section>
@@ -195,7 +199,8 @@
                 <textarea id="f-def" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Definition"></textarea>
                 <textarea id="f-ex" class="md:col-span-2 bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Context Example"></textarea>
                 <div class="md:col-span-2 flex gap-4">
-                    <button type="submit" id="submitBtn" class="flex-1 bg-brand py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center">Publish</button>
+                    <button type="submit" id="submitBtn" class="flex-1 bg-brand py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center"><span id="btnText">Publish</span></button>
+                    <button type="button" id="deleteBtn" class="hidden bg-red-500/20 text-red-500 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Delete</button>
                 </div>
             </form>
         </section>
@@ -224,7 +229,7 @@
         let myFilter = 'learning';
         let userRole = 'student';
         let currentUser = null;
-        let activeView = 'home';
+        let activeView = 'home'; 
 
         const irregularVerbs = [
             { v1: "be", v2: "was/were", v3: "been", tr: "быть" },
@@ -334,6 +339,7 @@
             const verbsView = document.getElementById('verbsView');
             const navVoc = document.getElementById('nav-voc');
             const navVerbs = document.getElementById('nav-verbs');
+            
             if (section === 'verbs') {
                 vocView.classList.add('hidden');
                 verbsView.classList.remove('hidden');
@@ -373,8 +379,6 @@
             const q = document.getElementById('verbSearch').value.toLowerCase();
             const filtered = irregularVerbs.filter(v => 
                 v.v1.toLowerCase().includes(q) || 
-                v.v2.toLowerCase().includes(q) || 
-                v.v3.toLowerCase().includes(q) || 
                 v.tr.toLowerCase().includes(q)
             );
             renderVerbs(filtered);
@@ -458,6 +462,50 @@
             </div>`;
         }
 
+        async function updateWordStatus(wordId, newStatus, event) {
+            if (event) event.stopPropagation();
+            if (newStatus === userProgressMap[wordId]) newStatus = 'none';
+            if (newStatus === 'none') {
+                await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
+                delete userProgressMap[wordId];
+            } else {
+                await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' });
+                userProgressMap[wordId] = newStatus;
+            }
+            renderWords();
+            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
+        }
+
+        function showDetail(id) {
+            const w = wordsData.find(item => item.id === id);
+            if (!w) return;
+            const status = userProgressMap[w.id];
+            document.getElementById('statusButtons').innerHTML = `
+                <button onclick="updateWordStatus('${w.id}', 'learning')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'learning' ? 'bg-amber-400 text-white' : 'bg-gray-50 text-gray-400'}">Learning</button>
+                <button onclick="updateWordStatus('${w.id}', 'mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold transition ${status === 'mastered' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-400'}">Mastered</button>`;
+            document.getElementById('detailContent').innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+                    <div class="lg:col-span-2 space-y-12">
+                        <div>
+                            <span class="detail-badge">${w.level}</span>
+                            <div class="flex items-center gap-6 mt-6">
+                                <h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2>
+                                <button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high text-xl"></i></button>
+                            </div>
+                        </div>
+                        <div class="pt-10 border-t border-gray-100">
+                            <p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p>
+                        </div>
+                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium leading-relaxed italic">"${w.example}"</p></div>
+                    </div>
+                </div>`;
+            document.getElementById('detailView').classList.remove('hidden');
+        }
+
+        function hideDetail() { document.getElementById('detailView').classList.add('hidden'); }
+        function filterWords(l, b) { libFilter = l; document.querySelectorAll('#librarySection .filter-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderWords(); }
+        function filterMyWords(s, b) { myFilter = s; document.querySelectorAll('.my-filter-btn').forEach(btn => btn.classList.remove('text-brand', 'active-filter-btn')); b.classList.add('text-brand', 'active-filter-btn'); renderWords(); }
+        
         function updateUI(l, e) {
             if(l) {
                 document.getElementById('authSection').innerHTML = `<span class="text-[10px] font-black text-gray-400 uppercase">${e}</span><button onclick="_client.auth.signOut().then(()=>location.reload())" class="text-[10px] font-black text-red-400 uppercase ml-4">Exit</button>`;
