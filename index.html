@@ -53,6 +53,10 @@
         .reading-card:hover { border-color: #b593c4; box-shadow: 0 10px 30px -10px rgba(181, 147, 196, 0.2); }
         .article-card { border-left: 4px solid #b593c4; }
         .reading-tab.active { background-color: #1e293b; color: white; }
+        /* Новые стили для тестов */
+        .option-btn { border: 2px solid #f1f5f9; transition: all 0.2s; text-align: left; }
+        .option-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; }
+        .option-btn.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -157,22 +161,7 @@
                 </div>
             </div>
             <div id="readingTheoryContent"><div id="articlesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div></div>
-            <div id="readingPracticeContent" class="hidden"><div id="readingPracticeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="reading-card p-10 flex flex-col justify-between min-h-[320px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-6">
-                            <span class="px-4 py-1.5 bg-brand/10 text-brand text-[10px] font-black uppercase tracking-widest rounded-full">Biology</span>
-                            <span class="text-gray-300 text-[10px] font-bold uppercase tracking-widest">10 Questions</span>
-                        </div>
-                        <h3 class="text-2xl font-black text-gray-900 mb-4 leading-tight">The Impact of Climate Change on Marine Ecosystems</h3>
-                        <p class="text-gray-500 text-sm leading-relaxed">Analysis of coral reefs and migration in the Pacific ocean.</p>
-                    </div>
-                    <div class="mt-10 flex items-center justify-between pt-6 border-t border-gray-50">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Article 01</span>
-                        <button class="bg-gray-900 text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all">Start Reading</button>
-                    </div>
-                </div>
-            </div></div>
+            <div id="readingPracticeContent" class="hidden"><div id="readingPracticeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div></div>
         </div>
 
         <div id="detailView" class="hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
@@ -200,6 +189,7 @@
                 <button onclick="setAdminMode('word')" id="mode-word" class="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition bg-brand text-white">New Word</button>
                 <button onclick="setAdminMode('verb')" id="mode-verb" class="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition text-white/40">Irregular Verb</button>
                 <button onclick="setAdminMode('article')" id="mode-article" class="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition text-white/40">New Article</button>
+                <button onclick="setAdminMode('practice')" id="mode-practice" class="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition text-white/40">New Practice</button>
             </div>
 
             <form id="addWordForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -225,11 +215,26 @@
             </form>
 
             <form id="addArticleForm" class="hidden grid grid-cols-1 gap-6">
+                <input type="hidden" id="art-id">
                 <input type="text" id="art-title" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Article Title" required>
                 <select id="art-cat" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none"><option>Reading Strategy</option><option>Question Types</option><option>Vocabulary Tips</option></select>
                 <textarea id="art-desc" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none h-24" placeholder="Brief description"></textarea>
                 <textarea id="art-content" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none h-64" placeholder="Full Article Content (HTML)"></textarea>
                 <button type="submit" class="bg-brand py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Save Article</button>
+            </form>
+
+            <form id="addPracticeForm" class="hidden grid grid-cols-1 gap-6">
+                <input type="hidden" id="prac-id">
+                <div class="grid grid-cols-2 gap-6">
+                    <input type="text" id="prac-title" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Practice Title" required>
+                    <input type="text" id="prac-cat" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none" placeholder="Category (e.g. Biology)">
+                </div>
+                <textarea id="prac-text" class="bg-white/10 border-none rounded-2xl p-4 text-white outline-none h-48" placeholder="Passage Text"></textarea>
+                <div class="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p class="text-[10px] font-black uppercase mb-4 opacity-50">Questions (JSON format for now)</p>
+                    <textarea id="prac-questions" class="w-full bg-transparent border-none text-white outline-none h-32" placeholder='[{"q": "What is...?", "o": ["A", "B", "C", "D"], "a": 0, "exp": "Because..."}]'></textarea>
+                </div>
+                <button type="submit" class="bg-brand py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Save Practice Test</button>
             </form>
 
             <button type="button" id="deleteBtn" class="hidden mt-6 bg-red-500/20 text-red-500 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Delete Record</button>
@@ -248,8 +253,8 @@
         const SUPABASE_KEY = 'sb_publishable_44KE_hMHou4L53IykmUCvQ_cPahzba1';
         const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let wordsData = [], verbsData = [], articlesData = [];
-        let userProgressMap = {}, libFilter = 'All', myFilter = 'learning', userRole = 'student', currentUser = null, activeView = 'home', currentDetailId = null;
+        let wordsData = [], verbsData = [], articlesData = [], practiceData = [];
+        let userProgressMap = {}, libFilter = 'All', myFilter = 'learning', userRole = 'student', currentUser = null, activeView = 'home', currentDetailId = null, currentType = 'word';
 
         async function checkSession() {
             const { data: { session } } = await _client.auth.getSession();
@@ -260,7 +265,7 @@
                 document.getElementById('navBar').classList.remove('hidden');
                 document.getElementById('authModal').classList.add('hidden');
                 updateUI(true, currentUser.email);
-                await Promise.all([loadUserProgress(), loadWords(), loadVerbs(), loadArticles()]);
+                await Promise.all([loadUserProgress(), loadWords(), loadVerbs(), loadArticles(), loadPractice()]);
             }
         }
 
@@ -283,6 +288,11 @@
             const { data } = await _client.from('reading_articles').select('*').order('created_at', { ascending: false });
             articlesData = data || [];
             if(document.getElementById('nav-reading').classList.contains('active')) renderReading();
+        }
+
+        async function loadPractice() {
+            const { data } = await _client.from('reading_practice').select('*').order('created_at', { ascending: false });
+            practiceData = data || [];
         }
 
         function showSection(s) {
@@ -314,7 +324,7 @@
 
         function createCardHtml(w) {
             const s = userProgressMap[w.id];
-            return `<div class="word-card p-8 rounded-[35px] flex flex-col justify-between min-h-[280px] cursor-pointer" onclick="showDetail('${w.id}')">
+            return `<div class="word-card p-8 rounded-[35px] flex flex-col justify-between min-h-[280px] cursor-pointer" onclick="showDetail('${w.id}', 'word')">
                 <div><div class="flex justify-between items-start mb-4"><h3 class="text-2xl font-black text-gray-800 tracking-tighter">${w.word}</h3><div class="flex gap-1">
                 <button onclick="updateWordStatus('${w.id}','learning',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='learning'?'bg-amber-400 border-amber-400 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-bolt text-[10px]"></i></button>
                 <button onclick="updateWordStatus('${w.id}','mastered',event)" class="w-8 h-8 rounded-full border flex items-center justify-center transition ${s==='mastered'?'bg-green-500 border-green-500 text-white':'bg-gray-50 text-gray-300'}"><i class="fa-solid fa-check text-[10px]"></i></button>
@@ -322,43 +332,131 @@
                 <div class="mt-8 flex justify-between items-center border-t border-gray-50 pt-4"><span class="text-[9px] font-black text-brand uppercase tracking-widest">${w.level}</span><button onclick="event.stopPropagation(); speak('${w.word}')" class="text-gray-400 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high"></i></button></div></div>`;
         }
 
-        function showDetail(id) {
+        function showDetail(id, type) {
             currentDetailId = id;
-            const w = wordsData.find(i => i.id === id); if (!w) return;
+            currentType = type;
             if (userRole === 'admin') document.getElementById('editBtn').classList.remove('hidden');
-            const s = userProgressMap[w.id];
-            document.getElementById('statusButtons').innerHTML = `<button onclick="updateWordStatus('${w.id}','learning')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='learning'?'bg-amber-400 text-white':'bg-gray-50 text-gray-400'}">In Progress</button><button onclick="updateWordStatus('${w.id}','mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='mastered'?'bg-green-500 text-white':'bg-gray-50 text-gray-400'}">Mastered</button>`;
-            document.getElementById('detailContent').innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                    <div class="lg:col-span-2 space-y-12">
-                        <div><span class="detail-badge">${w.level}</span><div class="flex items-center gap-6 mt-6"><h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2><button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high text-xl"></i></button></div><p class="text-gray-400 font-bold mt-2">${w.pos}</p></div>
-                        <div class="pt-10 border-t border-gray-100"><h4 class="text-gray-300 font-black text-[10px] uppercase mb-6">DEFINITION</h4><p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p></div>
-                        <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium italic">"${w.example}"</p></div>
-                    </div>
-                    <div class="space-y-6">
-                        <div class="side-card bg-green-50/50 border-green-100"><h4 class="text-green-600/50 font-black text-[9px] uppercase tracking-widest mb-4">SYNONYMS</h4><p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p></div>
-                        <div class="side-card bg-red-50/50 border-red-100"><h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">ANTONYMS</h4><p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p></div>
-                        <div class="side-card bg-yellow-50/50 border-yellow-100"><h4 class="text-yellow-600/50 font-black text-[9px] uppercase tracking-widest mb-4"><i class="fa-solid fa-lightbulb"></i> TIP</h4><p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p></div>
-                    </div>
-                </div>`;
+
+            if (type === 'word') {
+                const w = wordsData.find(i => i.id === id);
+                const s = userProgressMap[w.id];
+                document.getElementById('statusButtons').innerHTML = `<button onclick="updateWordStatus('${w.id}','learning')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='learning'?'bg-amber-400 text-white':'bg-gray-50 text-gray-400'}">In Progress</button><button onclick="updateWordStatus('${w.id}','mastered')" class="px-6 py-2 rounded-full text-[10px] font-bold ${s==='mastered'?'bg-green-500 text-white':'bg-gray-50 text-gray-400'}">Mastered</button>`;
+                document.getElementById('detailContent').innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+                        <div class="lg:col-span-2 space-y-12">
+                            <div><span class="detail-badge">${w.level}</span><div class="flex items-center gap-6 mt-6"><h2 class="text-8xl font-black text-gray-900 tracking-tighter">${w.word}</h2><button onclick="speak('${w.word}')" class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-900 transition"><i class="fa-solid fa-volume-high text-xl"></i></button></div><p class="text-gray-400 font-bold mt-2">${w.pos}</p></div>
+                            <div class="pt-10 border-t border-gray-100"><h4 class="text-gray-300 font-black text-[10px] uppercase mb-6">DEFINITION</h4><p class="text-4xl font-bold text-gray-800 leading-tight">${w.definition}</p></div>
+                            <div class="bg-gray-900 text-white p-10 rounded-[40px] shadow-2xl overflow-hidden"><p class="text-2xl font-medium italic">"${w.example}"</p></div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="side-card bg-green-50/50 border-green-100"><h4 class="text-green-600/50 font-black text-[9px] uppercase tracking-widest mb-4">SYNONYMS</h4><p class="text-green-800 font-bold text-xl">${w.synonyms || '—'}</p></div>
+                            <div class="side-card bg-red-50/50 border-red-100"><h4 class="text-red-600/50 font-black text-[9px] uppercase tracking-widest mb-4">ANTONYMS</h4><p class="text-red-800 font-bold text-xl">${w.antonyms || '—'}</p></div>
+                            <div class="side-card bg-yellow-50/50 border-yellow-100"><h4 class="text-yellow-600/50 font-black text-[9px] uppercase tracking-widest mb-4"><i class="fa-solid fa-lightbulb"></i> TIP</h4><p class="text-yellow-800 font-bold text-sm">${w.tip || '—'}</p></div>
+                        </div>
+                    </div>`;
+            } else if (type === 'article') {
+                const a = articlesData.find(item => item.id === id);
+                document.getElementById('statusButtons').innerHTML = '';
+                document.getElementById('detailContent').innerHTML = `<div class="max-w-4xl mx-auto"><span class="detail-badge">${a.category}</span><h2 class="text-6xl font-black text-gray-900 tracking-tighter mt-8 mb-12">${a.title}</h2><div class="prose max-w-none text-gray-600 text-lg leading-relaxed">${a.content.replace(/\n/g, '<br>')}</div></div>`;
+            } else if (type === 'practice') {
+                const p = practiceData.find(i => i.id === id);
+                document.getElementById('statusButtons').innerHTML = '';
+                renderPracticeInterface(p);
+            }
             document.getElementById('detailView').classList.remove('hidden');
         }
 
+        function renderPracticeInterface(p) {
+            const questions = JSON.parse(p.questions || '[]');
+            let html = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div class="bg-gray-50 p-12 rounded-[50px] h-fit sticky top-20">
+                    <span class="detail-badge mb-6 inline-block">${p.category}</span>
+                    <h2 class="text-4xl font-black text-gray-900 mb-8">${p.title}</h2>
+                    <div class="text-gray-600 leading-relaxed text-lg overflow-y-auto max-h-[60vh] pr-4">${p.passage_text}</div>
+                </div>
+                <div class="space-y-12">
+                    <h3 class="text-2xl font-black uppercase tracking-tighter">Questions</h3>
+                    ${questions.map((q, qIdx) => `
+                        <div class="space-y-6 p-8 border border-gray-100 rounded-[40px]">
+                            <p class="font-bold text-xl text-gray-900">${qIdx + 1}. ${q.q}</p>
+                            <div class="grid grid-cols-1 gap-3">
+                                ${q.o.map((opt, oIdx) => `
+                                    <button onclick="checkAnswer(this, ${qIdx}, ${oIdx}, ${q.a}, '${q.exp.replace(/'/g, "\\'")}')" class="option-btn p-5 rounded-2xl font-medium text-left">${opt}</button>
+                                `).join('')}
+                            </div>
+                            <div id="exp-${qIdx}" class="hidden p-6 bg-brand/5 rounded-2xl text-sm text-brand-dark font-medium border border-brand/10"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+            document.getElementById('detailContent').innerHTML = html;
+        }
+
+        function checkAnswer(btn, qIdx, selectedIdx, correctIdx, explanation) {
+            const parent = btn.parentElement;
+            const buttons = parent.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            if (selectedIdx === correctIdx) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons[correctIdx].classList.add('correct');
+            }
+            const expDiv = document.getElementById(`exp-${qIdx}`);
+            expDiv.innerHTML = `<strong>Explanation:</strong> ${explanation}`;
+            expDiv.classList.remove('hidden');
+        }
+
         function openEditMode() {
-            const w = wordsData.find(i => i.id === currentDetailId); if (!w) return;
-            setAdminMode('word');
-            document.getElementById('f-id').value = w.id; document.getElementById('f-word').value = w.word;
-            document.getElementById('f-level').value = w.level; document.getElementById('f-pos').value = w.pos;
-            document.getElementById('f-syn').value = w.synonyms || ''; document.getElementById('f-ant').value = w.antonyms || '';
-            document.getElementById('f-prog').value = w.progress || ''; document.getElementById('f-tip').value = w.tip || '';
-            document.getElementById('f-def').value = w.definition; document.getElementById('f-ex').value = w.example;
-            document.getElementById('deleteBtn').classList.remove('hidden'); hideDetail();
+            if (currentType === 'word') {
+                const w = wordsData.find(i => i.id === currentDetailId);
+                setAdminMode('word');
+                document.getElementById('f-id').value = w.id; document.getElementById('f-word').value = w.word;
+                document.getElementById('f-level').value = w.level; document.getElementById('f-pos').value = w.pos;
+                document.getElementById('f-syn').value = w.synonyms || ''; document.getElementById('f-ant').value = w.antonyms || '';
+                document.getElementById('f-prog').value = w.progress || ''; document.getElementById('f-tip').value = w.tip || '';
+                document.getElementById('f-def').value = w.definition; document.getElementById('f-ex').value = w.example;
+            } else if (currentType === 'article') {
+                const a = articlesData.find(i => i.id === currentDetailId);
+                setAdminMode('article');
+                document.getElementById('art-id').value = a.id;
+                document.getElementById('art-title').value = a.title;
+                document.getElementById('art-cat').value = a.category;
+                document.getElementById('art-desc').value = a.description;
+                document.getElementById('art-content').value = a.content;
+            } else if (currentType === 'practice') {
+                const p = practiceData.find(i => i.id === currentDetailId);
+                setAdminMode('practice');
+                document.getElementById('prac-id').value = p.id;
+                document.getElementById('prac-title').value = p.title;
+                document.getElementById('prac-cat').value = p.category;
+                document.getElementById('prac-text').value = p.passage_text;
+                document.getElementById('prac-questions').value = p.questions;
+            }
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            hideDetail();
             document.getElementById('adminPanel').classList.remove('hidden');
             window.scrollTo(0, document.body.scrollHeight);
         }
 
         function renderReading() {
-            document.getElementById('articlesGrid').innerHTML = articlesData.map(a => `<div class="reading-card article-card p-8 flex flex-col justify-between min-h-[280px]"><div><span class="text-[9px] font-black text-brand uppercase tracking-widest mb-4 block">${a.category}</span><h3 class="text-xl font-black text-gray-900 mb-3 leading-tight">${a.title}</h3><p class="text-gray-400 text-xs line-clamp-3">${a.description}</p></div><button onclick="showArticleDetail('${a.id}')" class="mt-8 text-[10px] font-black uppercase text-gray-900 flex items-center gap-2 hover:text-brand transition">Read Theory <i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
+            document.getElementById('articlesGrid').innerHTML = articlesData.map(a => `<div class="reading-card article-card p-8 flex flex-col justify-between min-h-[280px]"><div><span class="text-[9px] font-black text-brand uppercase tracking-widest mb-4 block">${a.category}</span><h3 class="text-xl font-black text-gray-900 mb-3 leading-tight">${a.title}</h3><p class="text-gray-400 text-xs line-clamp-3">${a.description}</p></div><button onclick="showDetail('${a.id}', 'article')" class="mt-8 text-[10px] font-black uppercase text-gray-900 flex items-center gap-2 hover:text-brand transition">Read Theory <i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
+            
+            document.getElementById('readingPracticeGrid').innerHTML = practiceData.map(p => `
+                <div class="reading-card p-10 flex flex-col justify-between min-h-[320px]">
+                    <div>
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="px-4 py-1.5 bg-brand/10 text-brand text-[10px] font-black uppercase tracking-widest rounded-full">${p.category}</span>
+                            <span class="text-gray-300 text-[10px] font-bold uppercase tracking-widest">Interactive</span>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-900 mb-4 leading-tight">${p.title}</h3>
+                    </div>
+                    <div class="mt-10 flex items-center justify-between pt-6 border-t border-gray-50">
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Practice</span>
+                        <button onclick="showDetail('${p.id}', 'practice')" class="bg-gray-900 text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all">Start Test</button>
+                    </div>
+                </div>`).join('');
         }
 
         function switchReadingTab(tab, btn) {
@@ -367,13 +465,6 @@
             btn.classList.add('active', 'text-gray-900'); btn.classList.remove('text-gray-400');
             if(tab === 'theory') { document.getElementById('readingTheoryContent').classList.remove('hidden'); document.getElementById('readingPracticeContent').classList.add('hidden'); }
             else { document.getElementById('readingTheoryContent').classList.add('hidden'); document.getElementById('readingPracticeContent').classList.remove('hidden'); }
-        }
-
-        function showArticleDetail(id) {
-            const a = articlesData.find(item => item.id === id); if (!a) return;
-            document.getElementById('editBtn').classList.add('hidden'); document.getElementById('statusButtons').innerHTML = '';
-            document.getElementById('detailContent').innerHTML = `<div class="max-w-4xl mx-auto"><span class="detail-badge">${a.category}</span><h2 class="text-6xl font-black text-gray-900 tracking-tighter mt-8 mb-12">${a.title}</h2><div class="prose max-w-none text-gray-600 text-lg leading-relaxed">${a.content.replace(/\n/g, '<br>')}</div></div>`;
-            document.getElementById('detailView').classList.remove('hidden');
         }
 
         function renderVerbs(data) {
@@ -386,13 +477,19 @@
         }
 
         function setAdminMode(mode) {
-            ['word', 'verb', 'article'].forEach(m => {
+            currentType = mode;
+            ['word', 'verb', 'article', 'practice'].forEach(m => {
                 document.getElementById('add' + m.charAt(0).toUpperCase() + m.slice(1) + 'Form').classList.add('hidden');
                 document.getElementById('mode-' + m).className = m === mode ? 'px-8 py-3 rounded-xl text-[10px] font-black uppercase bg-brand text-white' : 'px-8 py-3 rounded-xl text-[10px] font-black uppercase text-white/40';
             });
             document.getElementById('add' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Form').classList.remove('hidden');
+            if (mode === 'word') document.getElementById('f-id').value = '';
+            if (mode === 'article') document.getElementById('art-id').value = '';
+            if (mode === 'practice') document.getElementById('prac-id').value = '';
+            document.getElementById('deleteBtn').classList.add('hidden');
         }
 
+        // --- Event Listeners for Forms ---
         document.getElementById('addWordForm').addEventListener('submit', async (e) => {
             e.preventDefault(); const id = document.getElementById('f-id').value;
             const payload = { word: document.getElementById('f-word').value, level: document.getElementById('f-level').value, pos: document.getElementById('f-pos').value, synonyms: document.getElementById('f-syn').value, antonyms: document.getElementById('f-ant').value, progress: parseInt(document.getElementById('f-prog').value) || 0, tip: document.getElementById('f-tip').value, definition: document.getElementById('f-def').value, example: document.getElementById('f-ex').value };
@@ -402,38 +499,44 @@
 
         document.getElementById('addArticleForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const id = document.getElementById('art-id').value;
             const payload = { title: document.getElementById('art-title').value, category: document.getElementById('art-cat').value, description: document.getElementById('art-desc').value, content: document.getElementById('art-content').value };
-            await _client.from('reading_articles').insert([payload]); location.reload();
+            if (id) await _client.from('reading_articles').update(payload).eq('id', id);
+            else await _client.from('reading_articles').insert([payload]); 
+            location.reload();
+        });
+
+        document.getElementById('addPracticeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('prac-id').value;
+            const payload = { title: document.getElementById('prac-title').value, category: document.getElementById('prac-cat').value, passage_text: document.getElementById('prac-text').value, questions: document.getElementById('prac-questions').value };
+            if (id) await _client.from('reading_practice').update(payload).eq('id', id);
+            else await _client.from('reading_practice').insert([payload]);
+            location.reload();
         });
 
         document.getElementById('deleteBtn').addEventListener('click', async () => { 
-            const id = document.getElementById('f-id').value;
-            if (confirm('Delete?')) { 
-                await _client.from('vocabulary').delete().eq('id', id); 
-                wordsData = wordsData.filter(w => w.id !== id);
-                renderWords();
-                toggleAdminPanel();
-                alert('Deleted');
-            } 
+            if (!confirm('Delete?')) return;
+            let table = 'vocabulary', id = '';
+            if (currentType === 'word') { table = 'vocabulary'; id = document.getElementById('f-id').value; }
+            else if (currentType === 'article') { table = 'reading_articles'; id = document.getElementById('art-id').value; }
+            else if (currentType === 'practice') { table = 'reading_practice'; id = document.getElementById('prac-id').value; }
+            
+            await _client.from(table).delete().eq('id', id); 
+            location.reload();
         });
 
-        // UPDATED: Теперь можно снять статус, если кликнуть на него повторно
         async function updateWordStatus(wordId, newStatus, event) { 
             if (event) event.stopPropagation(); 
-            
-            // Если текущий статус такой же, как тот, на который нажали - УДАЛЯЕМ статус
             if (userProgressMap[wordId] === newStatus) {
                 await _client.from('user_progress').delete().eq('user_id', currentUser.id).eq('word_id', wordId);
                 delete userProgressMap[wordId];
             } else {
-                // Иначе устанавливаем новый
                 await _client.from('user_progress').upsert({ user_id: currentUser.id, word_id: wordId, status: newStatus }, { onConflict: 'user_id, word_id' }); 
                 userProgressMap[wordId] = newStatus; 
             }
-            
             renderWords(); 
-            // Обновляем кнопки в открытом окне деталей, если оно открыто
-            if (!document.getElementById('detailView').classList.contains('hidden')) showDetail(wordId);
+            if (!document.getElementById('detailView').classList.contains('hidden') && currentType === 'word') showDetail(wordId, 'word');
         }
 
         function switchView(view) { activeView = view; renderWords(); window.scrollTo(0,0); }
